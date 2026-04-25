@@ -1,3 +1,8 @@
+using Microsoft.EntityFrameworkCore;
+using SoClover.Server.Context;
+using SoClover.Server.Hubs;
+using SoClover.Server.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -7,6 +12,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSignalR();
+
+// Register application services
+builder.Services.AddSingleton<IGameService, GameService>();
+builder.Services.AddSingleton<IRoomService, RoomService>();
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<SoCloverDBContext>(options =>
+    options.UseSqlServer(connectionString));
 var app = builder.Build();
 
 app.UseDefaultFiles();
@@ -24,7 +38,6 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
-
-app.MapFallbackToFile("/index.html");
+app.MapHub<SoCloverHub>("/soclover");
 
 app.Run();
