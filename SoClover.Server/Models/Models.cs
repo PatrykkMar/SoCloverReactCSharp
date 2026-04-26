@@ -5,9 +5,15 @@ namespace SoClover.Server.Models
 {
     public enum GameStatus { Lobby, Writing, Solving, Finished }
 
-    public class GameRoom
+    public abstract class BaseEntity
     {
         public int Id { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? ModifiedAt { get; set; }
+    }
+
+    public class GameRoom : BaseEntity
+    {
 
         [Required, StringLength(4), Column(TypeName = "nchar(4)")]
         public string RoomCode { get; set; } = string.Empty;
@@ -23,9 +29,8 @@ namespace SoClover.Server.Models
         public ICollection<Player> Players { get; set; } = new List<Player>();
     }
 
-    public class Player
+    public class Player : BaseEntity
     {
-        public int Id { get; set; }
 
         [Required, StringLength(30)]
         public string Name { get; set; } = string.Empty;
@@ -42,9 +47,8 @@ namespace SoClover.Server.Models
         public Board? Board { get; set; }
     }
 
-    public class Card
+    public class Card : BaseEntity
     {
-        public int Id { get; set; }
 
         [Required, StringLength(50)]
         public string WordTop { get; set; } = string.Empty;
@@ -59,9 +63,8 @@ namespace SoClover.Server.Models
         public string WordLeft { get; set; } = string.Empty;
     }
 
-    public class Board
+    public class Board : BaseEntity
     {
-        public int Id { get; set; }
         public int PlayerId { get; set; }
 
         [StringLength(50)]
@@ -81,9 +84,8 @@ namespace SoClover.Server.Models
         public ICollection<BoardSlot> BoardSlots { get; set; } = new List<BoardSlot>();
     }
 
-    public class BoardSlot
+    public class BoardSlot : BaseEntity
     {
-        public int Id { get; set; }
         public int BoardId { get; set; }
         public int CardId { get; set; }
 
@@ -96,9 +98,8 @@ namespace SoClover.Server.Models
         public Card Card { get; set; } = null!;
     }
 
-    public class Word
+    public class Word : BaseEntity
     {
-        public int Id { get; set; }
         public string String { get; set; }
     }
 }
