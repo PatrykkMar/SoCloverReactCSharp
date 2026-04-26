@@ -15,8 +15,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 
 // Register application services
-builder.Services.AddSingleton<IGameService, GameService>();
-builder.Services.AddSingleton<IRoomService, RoomService>();
+builder.Services.AddScoped<IGameService, GameService>();
+builder.Services.AddScoped<IRoomService, RoomService>();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<SoCloverDBContext>(options =>
@@ -38,6 +38,6 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<SoCloverHub>("/soclover");
+app.MapHub<SoCloverHub>("/socloverhub");
 
 app.Run();
