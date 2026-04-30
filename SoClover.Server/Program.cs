@@ -7,6 +7,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+//CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("SoCloverPolicy", policy =>
+    {
+        policy.WithOrigins("https://localhost:54861")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -15,13 +27,15 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 
 // Register application services
-builder.Services.AddScoped<IGameService, GameService>();
-builder.Services.AddScoped<IRoomService, RoomService>();
+builder.Services.AddTransient<IGameService, GameService>();
+builder.Services.AddTransient<IRoomService, RoomService>();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<SoCloverDBContext>(options =>
     options.UseSqlServer(connectionString));
 var app = builder.Build();
+
+app.UseCors("SoCloverPolicy");
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
