@@ -9,7 +9,7 @@ namespace SoClover.Server.Services
     {
         Task<GameRoom> CreateRoomAsync();
         Task<RoomDataDto> JoinRoomAsync(string roomCode, string playerName, string connectionId, Guid playerGuid);
-        Task<int?> LeaveRoomAsync(string connectionId);
+        Task<RoomDataDto?> LeaveRoomAsync(string connectionId);
     }
 
     public class RoomService(SoCloverDBContext context) : IRoomService
@@ -58,27 +58,31 @@ namespace SoClover.Server.Services
             return roomData;
         }
 
-        public async Task<int?> LeaveRoomAsync(string connectionId)
+        public async Task<RoomDataDto?> LeaveRoomAsync(string connectionId)
         {
             var player = await _context.Players
+                .Include(p => p.GameRoom)
+                    .ThenInclude(r => r.Players)
                 .FirstOrDefaultAsync(p => p.ConnectionId == connectionId);
 
             if (player == null) return null;
 
-            int roomId = player.GameRoomId;
-            _context.Players.Remove(player);
-            await _context.SaveChangesAsync();
+            var room = player.GameRoom;
+            var roomId = room.Id;
 
-            var anyLeft = await _context.Players.AnyAsync(p => p.GameRoomId == roomId);
+            _context.Players.Remove(player);
+
+            bool anyLeft = room.Players.Any(p => p.Id != player.Id);
+
             if (!anyLeft)
             {
-                var room = await _context.GameRooms.FindAsync(roomId);
-                if (room != null) _context.GameRooms.Remove(room);
-                await _context.SaveChangesAsync();
-                return null;
+                _context.GameRooms.Remove(room);
             }
 
-            return roomId;
+            await _context.SaveChangesAsync();
+
+            var roomData = new RoomDataDto(room);
+            return roomData;
         }
 
         private string GenerateRoomCode()

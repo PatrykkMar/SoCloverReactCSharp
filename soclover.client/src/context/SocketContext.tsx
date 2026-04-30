@@ -3,13 +3,6 @@ import * as signalR from '@microsoft/signalr';
 import type { RoomDataDto } from '../models/responses';
 import type { CreateRoomRequest, JoinRoomRequest } from '../models/requests';
 
-export interface Player {
-    id: number;
-    name: string;
-    isReady: boolean;
-    score: number;
-}
-
 export interface SocketContextType {
     isConnected: boolean;
     roomCode: string | null;

@@ -47,11 +47,11 @@ namespace SoClover.Server.Hubs
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var roomId = await _roomService.LeaveRoomAsync(Context.ConnectionId);
+            var roomData = await _roomService.LeaveRoomAsync(Context.ConnectionId);
 
-            if (roomId.HasValue)
+            if (roomData != null)
             {
-                await Clients.All.SendAsync("PlayerLeft", Context.ConnectionId);
+                await Clients.All.SendAsync("RoomUpdated", roomData);
             }
 
             await base.OnDisconnectedAsync(exception);
