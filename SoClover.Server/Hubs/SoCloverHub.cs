@@ -3,9 +3,9 @@ using SoClover.Server.Services;
 
 namespace SoClover.Server.Hubs
 {
-    public class SoCloverHub(RoomService service) : Hub
+    public class SoCloverHub(IRoomService service) : Hub
     {
-        private readonly RoomService _roomService = service;
+        private readonly IRoomService _roomService = service;
 
         public override async Task OnConnectedAsync()
         {
