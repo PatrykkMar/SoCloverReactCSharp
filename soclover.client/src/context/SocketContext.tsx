@@ -1,5 +1,7 @@
 import { createContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import * as signalR from '@microsoft/signalr';
+import type { RoomDataDto } from '../models/responses';
+import type { CreateRoomRequest, JoinRoomRequest } from '../models/requests';
 
 export interface Player {
     id: number;
@@ -11,9 +13,9 @@ export interface Player {
 export interface SocketContextType {
     isConnected: boolean;
     roomCode: string | null;
-    players: Player[];
-    createRoom: () => Promise<void>;
-    joinRoom: (code: string, name: string) => Promise<void>;
+    players: string[];
+    createRoom: (request: CreateRoomRequest) => Promise<void>;
+    joinRoom: (request: JoinRoomRequest) => Promise<void>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -23,7 +25,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     const connectionRef = useRef<signalR.HubConnection | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [roomCode, setRoomCode] = useState<string | null>(null);
-    const [players, setPlayers] = useState<Player[]>([]);
+    const [players, setPlayers] = useState<string[]>([]);
 
     useEffect(() => {
         const newConnection = new signalR.HubConnectionBuilder()
@@ -31,9 +33,12 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
             .withAutomaticReconnect()
             .build();
 
-        newConnection.on("RoomCreated", (code: string) => setRoomCode(code));
-        newConnection.on("PlayerJoined", (newPlayer: Player) => setPlayers(prev => [...prev, newPlayer]));
-        newConnection.on("PlayerLeft", (id: string) => setPlayers(prev => prev.filter(p => p.id.toString() !== id)));
+        newConnection.on("RoomUpdated", (data: RoomDataDto) => {
+            setRoomCode(data.roomCode);
+            setPlayers(data.players);
+        });
+
+        newConnection.on("PlayerLeft", (name: string) => setPlayers(prev => prev.filter(p => p !== name)));
         newConnection.on("Error", (msg: string) => console.error(msg));
 
         const startConnection = async () => {
@@ -56,14 +61,14 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
             newConnection.stop();
             connectionRef.current = null;
         };
-    }, []);
+    },[]);
 
-    const createRoom = async () => {
-        if (connectionRef.current) await connectionRef.current.invoke("CreateRoom");
+    const createRoom = async (request: CreateRoomRequest) => {
+        if (connectionRef.current) await connectionRef.current.invoke("CreateRoom", request);
     };
 
-    const joinRoom = async (code: string, name: string) => {
-        if (connectionRef.current) await connectionRef.current.invoke("JoinRoom", code, name);
+    const joinRoom = async (request: JoinRoomRequest) => {
+        if (connectionRef.current) await connectionRef.current.invoke("JoinRoom", request);
     };
 
     return (

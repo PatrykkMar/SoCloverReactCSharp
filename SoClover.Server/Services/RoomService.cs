@@ -1,13 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SoClover.Server.Context;
 using SoClover.Server.Models;
+using SoClover.Server.Models.Responses;
 
 namespace SoClover.Server.Services
 {
     public interface IRoomService
     {
         Task<GameRoom> CreateRoomAsync();
-        Task<Player> JoinRoomAsync(string roomCode, string playerName, string connectionId);
+        Task<RoomDataDto> JoinRoomAsync(string roomCode, string playerName, string connectionId, Guid playerGuid);
         Task<int?> LeaveRoomAsync(string connectionId);
     }
 
@@ -29,7 +30,7 @@ namespace SoClover.Server.Services
             return room;
         }
 
-        public async Task<Player> JoinRoomAsync(string roomCode, string playerName, string connectionId)
+        public async Task<RoomDataDto> JoinRoomAsync(string roomCode, string playerName, string connectionId, Guid playerGuid)
         {
             var room = await _context.GameRooms
                 .Include(r => r.Players)
@@ -44,13 +45,17 @@ namespace SoClover.Server.Services
                 Name = playerName,
                 ConnectionId = connectionId,
                 GameRoomId = room.Id,
+                PlayerGuid = playerGuid,
                 IsReady = false,
                 Score = 0
             };
 
-            _context.Players.Add(player);
+            room.Players.Add(player);
+
+            var roomData = new RoomDataDto(room);
+
             await _context.SaveChangesAsync();
-            return player;
+            return roomData;
         }
 
         public async Task<int?> LeaveRoomAsync(string connectionId)

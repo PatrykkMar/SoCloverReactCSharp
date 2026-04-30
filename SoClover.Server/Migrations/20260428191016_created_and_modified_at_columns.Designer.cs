@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SoClover.Server.Context;
 
@@ -11,9 +12,11 @@ using SoClover.Server.Context;
 namespace SoClover.Server.Migrations
 {
     [DbContext(typeof(SoCloverDBContext))]
-    partial class SoCloverDBContextModelSnapshot : ModelSnapshot
+    [Migration("20260428191016_created_and_modified_at_columns")]
+    partial class created_and_modified_at_columns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -200,9 +203,6 @@ namespace SoClover.Server.Migrations
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
-
-                    b.Property<Guid>("PlayerGuid")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Score")
                         .HasColumnType("int");

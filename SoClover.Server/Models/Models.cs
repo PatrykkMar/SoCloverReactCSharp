@@ -31,6 +31,8 @@ namespace SoClover.Server.Models
 
     public class Player : BaseEntity
     {
+        [Required]
+        public Guid PlayerGuid { get; set; }
 
         [Required, StringLength(30)]
         public string Name { get; set; } = string.Empty;

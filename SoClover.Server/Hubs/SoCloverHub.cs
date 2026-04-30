@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.SignalR;
+using SoClover.Server.Models;
+using SoClover.Server.Models.Requests;
 using SoClover.Server.Services;
 
 namespace SoClover.Server.Hubs
@@ -13,22 +16,28 @@ namespace SoClover.Server.Hubs
             await base.OnConnectedAsync();
         }
 
-        public async Task CreateRoom()
+        public async Task CreateRoom(CreateRoomRequest request)
         {
             var room = await _roomService.CreateRoomAsync();
+            var roomData = await _roomService.JoinRoomAsync(room.RoomCode, request.PlayerName, Context.ConnectionId, request.PlayerGuid);
             await Groups.AddToGroupAsync(Context.ConnectionId, room.RoomCode);
-            await Clients.Caller.SendAsync("RoomCreated", room.RoomCode);
+            await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
         }
 
-        public async Task JoinRoom(string roomCode, string playerName)
+        public async Task JoinRoom(JoinRoomRequest request)
         {
             try
             {
-                var player = await _roomService.JoinRoomAsync(roomCode, playerName, Context.ConnectionId);
+                var roomData = await _roomService.JoinRoomAsync(
+                    request.RoomCode,
+                    request.PlayerName,
+                    Context.ConnectionId,
+                    request.PlayerGuid
+                );
 
-                await Groups.AddToGroupAsync(Context.ConnectionId, roomCode.ToUpper());
+                await Groups.AddToGroupAsync(Context.ConnectionId, roomData.RoomCode.ToUpper());
 
-                await Clients.Group(roomCode.ToUpper()).SendAsync("PlayerJoined", player);
+                await Clients.Group(roomData.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
             }
             catch (Exception ex)
             {
