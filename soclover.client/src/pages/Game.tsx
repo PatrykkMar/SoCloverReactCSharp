@@ -1,5 +1,6 @@
 import { useContext } from "react";
 import { SocketContext } from "../context/SocketContext";
+import UsersList from "../components/UsersList";
 
 export default function Game() {
 
@@ -13,6 +14,7 @@ export default function Game() {
     return (
         <div className="container mt-5">
             <h1>Yay, you joined the game. Lobby code: {socket.roomCode}</h1>
+            <UsersList></UsersList>
         </div>
     );
 }
