@@ -1,6 +1,6 @@
 import { createContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import * as signalR from '@microsoft/signalr';
-import type { RoomDataDto } from '../models/responses';
+import type { RoomDataDto } from '../models/dtos';
 import type { CreateRoomRequest, JoinRoomRequest } from '../models/requests';
 
 export interface SocketContextType {
