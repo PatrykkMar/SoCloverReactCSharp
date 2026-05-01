@@ -13,6 +13,7 @@ namespace SoClover.Server.Context
         public DbSet<Card> Cards { get; set; }
         public DbSet<Board> Boards { get; set; }
         public DbSet<BoardSlot> BoardSlots { get; set; }
+        public DbSet<GameRoomCard> GameRoomCards { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,6 +28,11 @@ namespace SoClover.Server.Context
                 .WithMany()
                 .HasForeignKey(g => g.ActivePlayerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<GameRoomCard>().HasOne(grc => grc.GameRoom)
+                .WithMany(g => g.GameRoomCards)
+                .HasForeignKey(grc => grc.GameRoomId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Player>()
                 .HasOne(p => p.Board)
@@ -49,7 +55,12 @@ namespace SoClover.Server.Context
             modelBuilder.Entity<GameRoom>()
                 .Property(g => g.RoomCode);
 
-            modelBuilder.Entity<Player>();
+            modelBuilder.Entity<GameRoomCard>().HasOne(grc => grc.Card)
+                .WithMany(c => c.GameRoomCards) 
+                .HasForeignKey(grc => grc.CardId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            CardSeeder.Seed(modelBuilder);
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

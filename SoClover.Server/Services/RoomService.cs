@@ -25,6 +25,16 @@ namespace SoClover.Server.Services
                 Status = GameStatus.Lobby
             };
 
+            var cards = await _context.Cards.ToListAsync();
+
+            var deck = cards.Select(c => new GameRoomCard
+            {
+                CardId = c.Id,
+                GameRoom = room
+            }).ToList();
+
+            room.GameRoomCards = deck;
+
             _context.GameRooms.Add(room);
             await _context.SaveChangesAsync();
             return room;

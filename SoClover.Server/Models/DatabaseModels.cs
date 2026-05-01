@@ -27,6 +27,7 @@ namespace SoClover.Server.Models
 
         public Player? ActivePlayer { get; set; }
         public ICollection<Player> Players { get; set; } = new List<Player>();
+        public ICollection<GameRoomCard> GameRoomCards { get; set; } = new List<GameRoomCard>();
     }
 
     public class Player : BaseEntity
@@ -49,8 +50,9 @@ namespace SoClover.Server.Models
         public Board? Board { get; set; }
     }
 
-    public class Card : BaseEntity
+    public class Card
     {
+        public int Id { get; set; }
 
         [Required, StringLength(50)]
         public string WordTop { get; set; } = string.Empty;
@@ -63,6 +65,8 @@ namespace SoClover.Server.Models
 
         [Required, StringLength(50)]
         public string WordLeft { get; set; } = string.Empty;
+
+        public ICollection<GameRoomCard> GameRoomCards { get; set; } = new List<GameRoomCard>();
     }
 
     public class Board : BaseEntity
@@ -100,8 +104,12 @@ namespace SoClover.Server.Models
         public Card Card { get; set; } = null!;
     }
 
-    public class Word : BaseEntity
+    public class GameRoomCard : BaseEntity //deck
     {
-        public string String { get; set; }
+        public int GameRoomId { get; set; }
+        public int CardId { get; set; }
+
+        public GameRoom GameRoom { get; set; } = null!;
+        public Card Card { get; set; } = null!;
     }
 }
