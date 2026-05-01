@@ -5,6 +5,11 @@ namespace SoClover.Server.Models
 {
     public enum GameStatus { Lobby, Writing, Solving, Finished }
 
+    public enum CardLocation
+    {
+        InDeck, InHand, OnBoard, Discarded
+    }
+
     public abstract class BaseEntity
     {
         public int Id { get; set; }
@@ -22,7 +27,6 @@ namespace SoClover.Server.Models
 
         public int? ActivePlayerId { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
 
         public Player? ActivePlayer { get; set; }
@@ -93,7 +97,7 @@ namespace SoClover.Server.Models
     public class BoardSlot : BaseEntity
     {
         public int BoardId { get; set; }
-        public int CardId { get; set; }
+        public int? GameRoomCardId { get; set; }
 
         public int PositionIndex { get; set; } // 0-3
         public int CurrentRotation { get; set; } // 0, 90, 180, 270
@@ -101,13 +105,15 @@ namespace SoClover.Server.Models
 
 
         public Board Board { get; set; } = null!;
-        public Card Card { get; set; } = null!;
+        public GameRoomCard? GameRoomCard { get; set; }
     }
 
     public class GameRoomCard : BaseEntity //deck
     {
         public int GameRoomId { get; set; }
         public int CardId { get; set; }
+
+        public CardLocation Location { get; set; }
 
         public GameRoom GameRoom { get; set; } = null!;
         public Card Card { get; set; } = null!;

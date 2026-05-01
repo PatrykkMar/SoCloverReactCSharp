@@ -47,10 +47,10 @@ namespace SoClover.Server.Context
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<BoardSlot>()
-                .HasOne(s => s.Card)
-                .WithMany()
-                .HasForeignKey(s => s.CardId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasOne(s => s.GameRoomCard)
+                .WithOne()
+                .HasForeignKey<BoardSlot>(s => s.GameRoomCardId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<GameRoom>()
                 .Property(g => g.RoomCode);

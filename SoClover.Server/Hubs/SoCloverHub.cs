@@ -16,6 +16,7 @@ namespace SoClover.Server.Hubs
             await base.OnConnectedAsync();
         }
 
+        //room service
         public async Task CreateRoom(CreateRoomRequest request)
         {
             var room = await _roomService.CreateRoomAsync();
@@ -56,5 +57,7 @@ namespace SoClover.Server.Hubs
 
             await base.OnDisconnectedAsync(exception);
         }
+
+        //game service
     }
 }
