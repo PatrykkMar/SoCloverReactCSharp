@@ -20,6 +20,43 @@ namespace SoClover.Server.Helpers
             _context = context;
         }
 
+        public async Task<List<GameRoomCard>> DrawCardsFromDeckAsync(int roomId, int count)
+        {
+            var stats = await _context.GameRoomCards
+                .Where(c => c.GameRoomId == roomId)
+                .GroupBy(c => 1)
+                .Select(g => new {
+                    InDeck = g.Count(c => c.Location == CardLocation.InDeck),
+                    Discarded = g.Count(c => c.Location == CardLocation.Discarded)
+                })
+                .FirstOrDefaultAsync();
+
+            if (stats == null || (stats.InDeck + stats.Discarded) < count)
+            {
+                throw new InvalidOperationException("Not enough cards in the deck to draw.");
+            }
+
+            if (stats.InDeck < count)
+            {
+                var discardedCards = await _context.GameRoomCards
+                    .Where(c => c.GameRoomId == roomId && c.Location == CardLocation.Discarded)
+                    .ToListAsync();
+
+                foreach (var card in discardedCards)
+                {
+                    card.Location = CardLocation.InDeck;
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            return await _context.GameRoomCards
+                .Where(c => c.GameRoomId == roomId && c.Location == CardLocation.InDeck)
+                .OrderBy(r => Guid.NewGuid())
+                .Take(count)
+                .ToListAsync();
+        }
+
         public async Task CreateDeckAsync(int roomId)
         {
             var allCards = await _context.Cards.ToListAsync();
@@ -38,31 +75,29 @@ namespace SoClover.Server.Helpers
         public async Task AssignCardsToPlayersAsync(int[] playerIds, int roomId)
         {
             var players = await _context.Players.Where(p => playerIds.Contains(p.Id)).ToListAsync();
+            var allDrawnCards = await DrawCardsFromDeckAsync(roomId, 4 * playerIds.Length);
+            var cardsQueue = new Queue<GameRoomCard>(allDrawnCards);
 
             foreach (var player in players)
             {
-                var drawnCards = await _context.GameRoomCards
-                    .Where(c => c.GameRoomId == roomId && c.Location == CardLocation.InDeck)
-                    .Take(4)
-                    .ToListAsync();
-
                 var board = new Board { PlayerId = player.Id };
-                _context.Boards.Add(board);
-                await _context.SaveChangesAsync();
 
-                for (int i = 0; i < drawnCards.Count; i++)
+                for (int i = 0; i < 4; i++)
                 {
-                    drawnCards[i].Location = CardLocation.OnBoard;
+                    if (!cardsQueue.TryDequeue(out var card)) break;
 
-                    _context.BoardSlots.Add(new BoardSlot
+                    card.Location = CardLocation.OnBoard;
+
+                    board.BoardSlots.Add(new BoardSlot
                     {
-                        BoardId = board.Id,
-                        GameRoomCardId = drawnCards[i].Id,
+                        GameRoomCard = card,
                         PositionIndex = i,
                         CurrentRotation = 0
                     });
                 }
+                _context.Boards.Add(board);
             }
+
             await _context.SaveChangesAsync();
         }
 
