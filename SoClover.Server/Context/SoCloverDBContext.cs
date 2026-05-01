@@ -50,7 +50,7 @@ namespace SoClover.Server.Context
                 .HasOne(s => s.GameRoomCard)
                 .WithOne()
                 .HasForeignKey<BoardSlot>(s => s.GameRoomCardId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<GameRoom>()
                 .Property(g => g.RoomCode);

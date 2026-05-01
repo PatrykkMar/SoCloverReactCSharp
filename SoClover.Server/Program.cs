@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SoClover.Server.Context;
+using SoClover.Server.Helpers;
 using SoClover.Server.Hubs;
 using SoClover.Server.Services;
 
@@ -29,6 +30,9 @@ builder.Services.AddSignalR();
 // Register application services
 builder.Services.AddTransient<IGameService, GameService>();
 builder.Services.AddTransient<IRoomService, RoomService>();
+
+//Helpers
+builder.Services.AddTransient<ICardManager, CardManager>();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<SoCloverDBContext>(options =>

@@ -12,8 +12,8 @@ using SoClover.Server.Context;
 namespace SoClover.Server.Migrations
 {
     [DbContext(typeof(SoCloverDBContext))]
-    [Migration("20260501133126_AddedGameRoomCardRelations")]
-    partial class AddedGameRoomCardRelations
+    [Migration("20260501202301_GameRoomCardRelations")]
+    partial class GameRoomCardRelations
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -990,6 +990,9 @@ namespace SoClover.Server.Migrations
                     b.Property<int>("GameRoomId")
                         .HasColumnType("int");
 
+                    b.Property<int>("Location")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("datetime2");
 
@@ -1066,7 +1069,7 @@ namespace SoClover.Server.Migrations
                     b.HasOne("SoClover.Server.Models.GameRoomCard", "GameRoomCard")
                         .WithOne()
                         .HasForeignKey("SoClover.Server.Models.BoardSlot", "GameRoomCardId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Board");
 

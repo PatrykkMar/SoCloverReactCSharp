@@ -987,6 +987,9 @@ namespace SoClover.Server.Migrations
                     b.Property<int>("GameRoomId")
                         .HasColumnType("int");
 
+                    b.Property<int>("Location")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("datetime2");
 
@@ -1063,7 +1066,7 @@ namespace SoClover.Server.Migrations
                     b.HasOne("SoClover.Server.Models.GameRoomCard", "GameRoomCard")
                         .WithOne()
                         .HasForeignKey("SoClover.Server.Models.BoardSlot", "GameRoomCardId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Board");
 

@@ -5,7 +5,7 @@
 namespace SoClover.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class AddedGameRoomCardRelations : Migration
+    public partial class GameRoomCardRelations : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -21,6 +21,13 @@ namespace SoClover.Server.Migrations
             migrationBuilder.DropColumn(
                 name: "CardId",
                 table: "BoardSlots");
+
+            migrationBuilder.AddColumn<int>(
+                name: "Location",
+                table: "GameRoomCards",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
 
             migrationBuilder.AddColumn<int>(
                 name: "GameRoomCardId",
@@ -41,7 +48,7 @@ namespace SoClover.Server.Migrations
                 column: "GameRoomCardId",
                 principalTable: "GameRoomCards",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
@@ -54,6 +61,10 @@ namespace SoClover.Server.Migrations
             migrationBuilder.DropIndex(
                 name: "IX_BoardSlots_GameRoomCardId",
                 table: "BoardSlots");
+
+            migrationBuilder.DropColumn(
+                name: "Location",
+                table: "GameRoomCards");
 
             migrationBuilder.DropColumn(
                 name: "GameRoomCardId",
