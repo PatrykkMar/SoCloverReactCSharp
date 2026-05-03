@@ -1,12 +1,12 @@
 import { createContext, type ReactNode, useContext, useState, useEffect } from "react";
-import type { RoomDataDto } from "../models/dtos";
+import type { RoomDataDTO, GameStatus } from "../models/dtos";
 import type { CreateRoomRequest, JoinRoomRequest } from "../models/requests";
 import { SocketContext } from "./SocketContext";
 
 export interface RoomContextType {
     roomCode: string | null;
     players: string[];
-
+    status: GameStatus;
     createRoom: (request: CreateRoomRequest) => Promise<void>;
     joinRoom: (request: JoinRoomRequest) => Promise<void>;
 }
@@ -24,14 +24,16 @@ export const RoomProvider = ({ children }: { children: ReactNode }) => {
     const con = socketCont.connection;
 
     const [roomCode, setRoomCode] = useState<string | null>(null);
+    const [status, setStatus] = useState<GameStatus>("Lobby");
     const [players, setPlayers] = useState<string[]>([]);
 
     useEffect(() => {
         if (!socketCont.isConnected || !con) return;
 
-        const handleRoomUpdated = (data: RoomDataDto) => {
+        const handleRoomUpdated = (data: RoomDataDTO) => {
             setRoomCode(data.roomCode);
             setPlayers(data.players);
+            setStatus(data.status);
         };
 
         const handlePlayerLeft = (name: string) => {
@@ -58,7 +60,7 @@ export const RoomProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <RoomContext.Provider value={{ roomCode, players, createRoom, joinRoom }}>
+        <RoomContext.Provider value={{ roomCode, players, status, createRoom, joinRoom }}>
             {children}
         </RoomContext.Provider>
     );

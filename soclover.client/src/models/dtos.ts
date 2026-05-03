@@ -1,8 +1,10 @@
-export interface RoomDataDto {
-    roomCode: string
-    players: string[]
-}
+export type GameStatus = "Lobby" | "Writing" | "Solving" | "Finished";
 
+export interface RoomDataDTO {
+    roomCode: string;
+    players: string[];
+    status: GameStatus;
+}
 export interface CardDTO {
     wordTop: string;
     wordRight: string;
@@ -11,11 +13,15 @@ export interface CardDTO {
 }
 
 export interface BoardSlotDTO {
-    card: CardDTO;
+    card: CardDTO | null;
     currentRotation: number;
     positionIndex: number;
 }
 
-export interface BoardDTO {
+export interface BoardDataDTO {
     boardSlots: BoardSlotDTO[];
+    wordTop: string;
+    wordRight: string;
+    wordBottom: string;
+    wordLeft: string;
 }

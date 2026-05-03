@@ -2,12 +2,14 @@
 using SoClover.Server.Context;
 using SoClover.Server.Helpers;
 using SoClover.Server.Models;
+using SoClover.Server.Models.DTOs;
 
 namespace SoClover.Server.Services
 {
     public interface IGameService
     {
-        public Task StartGameAsync(string roomCode);
+        public Task<GameRoom> StartGameAsync(string roomCode);
+        Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int[] playersId);
     }
 
     public class GameService(SoCloverDBContext context, ICardManager cardManager) : IGameService
@@ -15,7 +17,7 @@ namespace SoClover.Server.Services
         private readonly SoCloverDBContext _context = context;
         private readonly ICardManager _cardManager = cardManager;
 
-        public async Task StartGameAsync(string playerConnectionId)
+        public async Task<GameRoom> StartGameAsync(string playerConnectionId)
         {
             var room = await _context.GameRooms
                 .Include(r => r.Players)
@@ -29,6 +31,25 @@ namespace SoClover.Server.Services
 
             await _cardManager.AssignCardsToPlayersAsync([.. room.Players.Select(x => x.Id)], room.Id);
             await _context.SaveChangesAsync();
+            return room;
+        }
+
+        public async Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int[] playersId)
+        {
+            var dict = new Dictionary<Player, BoardDataDTO>();
+            var players = await _context.Players
+                .Include(p => p.Board)
+                .ThenInclude(b => b.BoardSlots)
+                .ThenInclude(bs => bs.GameRoomCard)
+                .ThenInclude(grc => grc.Card)
+                .Where(p => playersId.Contains(p.Id))
+                .ToListAsync();
+
+            dict = players.ToDictionary(
+                p => p,
+                p => new BoardDataDTO(p.Board)
+            );
+            return dict;
         }
     }
 }

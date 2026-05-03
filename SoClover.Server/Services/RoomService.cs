@@ -11,12 +11,12 @@ namespace SoClover.Server.Services
         Task<GameRoom> CreateRoomAsync();
         Task<RoomDataDTO> JoinRoomAsync(string roomCode, string playerName, string connectionId, Guid playerGuid);
         Task<RoomDataDTO?> LeaveRoomAsync(string connectionId);
+        Task<RoomDataDTO> GetRoomDataAsync(int roomId);
     }
 
-    public class RoomService(SoCloverDBContext context, ICardManager cardManager) : IRoomService
+    public class RoomService(SoCloverDBContext context) : IRoomService
     {
         private readonly SoCloverDBContext _context = context;
-        private readonly ICardManager _cardManager = cardManager;   
         private static readonly Random _random = new();
 
         public async Task<GameRoom> CreateRoomAsync()
@@ -64,10 +64,8 @@ namespace SoClover.Server.Services
 
             room.Players.Add(player);
 
-            var roomData = new RoomDataDTO(room);
-
             await _context.SaveChangesAsync();
-            return roomData;
+            return await GetRoomDataAsync(room.Id);
         }
 
         public async Task<RoomDataDTO?> LeaveRoomAsync(string connectionId)
@@ -93,8 +91,7 @@ namespace SoClover.Server.Services
 
             await _context.SaveChangesAsync();
 
-            var roomData = new RoomDataDTO(room);
-            return roomData;
+            return await GetRoomDataAsync(room.Id);
         }
 
         private string GenerateRoomCode()
@@ -109,6 +106,17 @@ namespace SoClover.Server.Services
             while (_context.GameRooms.Any(r => r.RoomCode == code));
 
             return code;
+        }
+
+        public async Task<RoomDataDTO> GetRoomDataAsync(int roomId)
+        {
+            var room = await _context.GameRooms
+                .Include(r => r.Players)
+                .FirstOrDefaultAsync(r => r.Id == roomId);
+
+            if (room == null) throw new Exception("Room not found");
+
+            return new RoomDataDTO(room);
         }
     }
 }
