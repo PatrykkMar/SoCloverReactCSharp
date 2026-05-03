@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { SocketContext } from "../context/SocketContext";
+import { RoomContext } from "../context/RoomContext";
 import { getOrCreatePlayerGuid } from "../utils/socketUtils";
 import type { CreateRoomRequest, JoinRoomRequest } from "../models/requests"
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -14,26 +15,29 @@ export default function Home() {
 
 
     const socket = useContext(SocketContext);
+    const room = useContext(RoomContext);
+
+    if (!socket)
+        throw new Error("SocketContext not found! Make sure to wrap your app with SocketProvider.");
+
+    if (!room)
+        throw new Error("RoomContext not found! Make sure to wrap your app with RoomProvider.");
 
     useEffect(() => {
-        if (socket?.roomCode) {
+        if (room?.roomCode) {
             navigate(`/game`);
         }
-    }, [socket?.roomCode, navigate]);
-
-    if (!socket) {
-    return <div>SocketProvider not found!</div>;
-    }
+    }, [room?.roomCode, navigate]);
 
 
     const handleCreate = async () => {
         if (!nick) return alert("Enter your nick!");
-        await socket.createRoom({ playerName: nick, playerGuid: getOrCreatePlayerGuid() } as CreateRoomRequest);
+        await room?.createRoom({ playerName: nick, playerGuid: getOrCreatePlayerGuid() } as CreateRoomRequest);
     };
 
     const handleJoin = async () => {
-        if (!nick || !inputRoomCode) return alert("Uzupełnij dane!");
-        await socket.joinRoom({ playerName: nick, playerGuid: getOrCreatePlayerGuid(), roomCode: inputRoomCode } as JoinRoomRequest);
+        if (!nick || !inputRoomCode) return alert("Fill room code!");
+        await room?.joinRoom({ playerName: nick, playerGuid: getOrCreatePlayerGuid(), roomCode: inputRoomCode } as JoinRoomRequest);
     };
 
     return (
