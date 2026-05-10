@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { RoomContext } from "../context/RoomContext";
 import UsersList from "../components/UsersList";
+import Board from "../components/board/Board";
 
 export default function Game() {
     const room = useContext(RoomContext);
@@ -36,8 +37,8 @@ export default function Game() {
                                 <p className="text-secondary">Someone will start the game soon.</p>
                             </div>
                         ) : (
-                            <div>
-                                <h3>The Game is On!</h3>
+                                <div>
+                                    <Board></Board>
                             </div>
                         )}
                     </div>

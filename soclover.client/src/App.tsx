@@ -4,6 +4,7 @@ import { SocketProvider } from './context/SocketContext';
 import Home from './pages/Home';
 import Game from './pages/Game';
 import { RoomProvider } from './context/RoomContext';
+import { BoardProvider } from './context/BoardContext';
 
 
 
@@ -12,12 +13,14 @@ function App() {
     return (
         <SocketProvider>
             <RoomProvider>
-                <BrowserRouter>
-                    <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/game" element={<Game />} />
-                    </Routes>
-                </BrowserRouter>
+                <BoardProvider>
+                    <BrowserRouter>
+                        <Routes>
+                            <Route path="/" element={<Home />} />
+                            <Route path="/game" element={<Game />} />
+                        </Routes>
+                    </BrowserRouter>
+                </BoardProvider>
             </RoomProvider>
         </SocketProvider>
     );
