@@ -1,14 +1,16 @@
 import { createContext, type ReactNode, useContext, useState, useEffect } from "react";
-import type { RoomDataDTO, GameStatus } from "../models/dtos";
+import type { RoomDataDTO } from "../models/dtos";
+import { GameStatus } from "../models/dtos";
 import type { CreateRoomRequest, JoinRoomRequest } from "../models/requests";
 import { SocketContext } from "./SocketContext";
 
 export interface RoomContextType {
     roomCode: string | null;
     players: string[];
-    status: GameStatus;
+    status: string;
     createRoom: (request: CreateRoomRequest) => Promise<void>;
     joinRoom: (request: JoinRoomRequest) => Promise<void>;
+    startGame: () => Promise<void>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -24,7 +26,7 @@ export const RoomProvider = ({ children }: { children: ReactNode }) => {
     const con = socketCont.connection;
 
     const [roomCode, setRoomCode] = useState<string | null>(null);
-    const [status, setStatus] = useState<GameStatus>("Lobby");
+    const [status, setStatus] = useState<string>(GameStatus.Lobby);
     const [players, setPlayers] = useState<string[]>([]);
 
     useEffect(() => {
@@ -59,8 +61,13 @@ export const RoomProvider = ({ children }: { children: ReactNode }) => {
         await con.invoke("JoinRoom", request);
     };
 
+    const startGame = async () => {
+        if (!con) return;
+        await con.invoke("StartGame");
+    };
+
     return (
-        <RoomContext.Provider value={{ roomCode, players, status, createRoom, joinRoom }}>
+        <RoomContext.Provider value={{ roomCode, players, status, createRoom, joinRoom, startGame }}>
             {children}
         </RoomContext.Provider>
     );

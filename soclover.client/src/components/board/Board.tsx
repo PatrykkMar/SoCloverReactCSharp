@@ -7,7 +7,7 @@ export default function Board() {
     const boardContext = useContext(BoardContext);
 
     if (!boardContext)
-        return <div>£adowanie planszy...</div>;
+        return <div>Board loading...</div>;
 
     const { board } = boardContext;
 

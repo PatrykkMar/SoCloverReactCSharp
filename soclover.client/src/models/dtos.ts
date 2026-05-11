@@ -1,9 +1,13 @@
-export type GameStatus = "Lobby" | "Writing" | "Solving" | "Finished";
-
+export const GameStatus = {
+    Lobby: "Lobby",
+    Writing: "Writing",
+    Solving: "Solving",
+    Finished: "Finished",
+} as const;
 export interface RoomDataDTO {
     roomCode: string;
     players: string[];
-    status: GameStatus;
+    status: string;
 }
 export interface CardDTO {
     wordTop: string;
