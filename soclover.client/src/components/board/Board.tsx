@@ -1,5 +1,5 @@
 import { BoardContext } from "../../context/BoardContext";
-import type { SubmitClueRequest } from "../../models/requests";
+import type { SubmitCluesRequest } from "../../models/requests";
 import BoardSlot from "./BoardSlot";
 import styles from "./Board.module.css";
 import { useContext, useRef } from "react";
@@ -20,7 +20,7 @@ export default function Board() {
     const { board, submitClues } = boardContext;
 
     const handleReadyClick = () => {
-        const request: SubmitClueRequest = {words: [
+        const request: SubmitCluesRequest = {words: [
             topRef.current?.value || "",
             rightRef.current?.value || "",
             bottomRef.current?.value || "",

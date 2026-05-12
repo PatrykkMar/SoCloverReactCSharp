@@ -19,19 +19,25 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
             .withAutomaticReconnect()
             .build();
 
+        conn.on("Error", (errorMessage: string) => {
+            console.error("SignalR Error:", errorMessage);
+            alert(`${errorMessage}`);
+        });
+
         const start = async () => {
             try {
                 await conn.start();
                 setConnection(conn);
                 setIsConnected(true);
             } catch (err) {
-                console.error(err);
+                console.error("SignalR Connection Error:", err);
             }
         };
 
         start();
 
         return () => {
+            conn.off("Error");
             conn.stop();
             setConnection(null);
             setIsConnected(false);

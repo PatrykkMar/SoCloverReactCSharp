@@ -28,23 +28,16 @@ namespace SoClover.Server.Hubs
 
         public async Task JoinRoom(JoinRoomRequest request)
         {
-            try
-            {
-                var roomData = await _roomService.JoinRoomAsync(
-                    request.RoomCode,
-                    request.PlayerName,
-                    Context.ConnectionId,
-                    request.PlayerGuid
-                );
+            var roomData = await _roomService.JoinRoomAsync(
+                request.RoomCode,
+                request.PlayerName,
+                Context.ConnectionId,
+                request.PlayerGuid
+            );
 
-                await Groups.AddToGroupAsync(Context.ConnectionId, roomData.RoomCode.ToUpper());
+            await Groups.AddToGroupAsync(Context.ConnectionId, roomData.RoomCode.ToUpper());
 
-                await Clients.Group(roomData.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
-            }
-            catch (Exception ex)
-            {
-                await Clients.Caller.SendAsync("Error", ex.Message);
-            }
+            await Clients.Group(roomData.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
@@ -64,62 +57,48 @@ namespace SoClover.Server.Hubs
 
         public async Task StartGame()
         {
-            try
+            var room = await _gameService.StartGameAsync(Context.ConnectionId);
+
+            var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
+                [.. room.Players.Select(p => p.Id)]
+            );
+
+
+            var roomData = await _roomService.GetRoomDataAsync(room.Id);
+            await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
+
+            foreach (var entry in playerBoards)
             {
-                var room = await _gameService.StartGameAsync(Context.ConnectionId);
+                var player = entry.Key;
+                var boardDto = entry.Value;
 
-                var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
-                    [.. room.Players.Select(p => p.Id)]
-                );
-
-
-                var roomData = await _roomService.GetRoomDataAsync(room.Id);
-                await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
-
-                foreach (var entry in playerBoards)
+                if (!string.IsNullOrEmpty(player.ConnectionId))
                 {
-                    var player = entry.Key;
-                    var boardDto = entry.Value;
-
-                    if (!string.IsNullOrEmpty(player.ConnectionId))
-                    {
-                        await Clients.Client(player.ConnectionId).SendAsync("BoardUpdated", boardDto);
-                    }
+                    await Clients.Client(player.ConnectionId).SendAsync("BoardUpdated", boardDto);
                 }
-            }
-            catch (Exception ex)
-            {
-                await Clients.Caller.SendAsync("Error", ex.Message);
             }
         }
 
         public async Task SubmitClues(SubmitCluesRequest request)
         {
-            try
+            var room = await _gameService.SubmitCluesAsync(Context.ConnectionId, request.Words);
+            var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
+                [.. room.Players.Select(p => p.Id)]
+            );
+
+
+            var roomData = await _roomService.GetRoomDataAsync(room.Id);
+            await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
+
+            foreach (var entry in playerBoards)
             {
-                var room = await _gameService.SubmitCluesAsync(Context.ConnectionId, request.Words);
-                var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
-                    [.. room.Players.Select(p => p.Id)]
-                );
+                var player = entry.Key;
+                var boardDto = entry.Value;
 
-
-                var roomData = await _roomService.GetRoomDataAsync(room.Id);
-                await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
-
-                foreach (var entry in playerBoards)
+                if (!string.IsNullOrEmpty(player.ConnectionId))
                 {
-                    var player = entry.Key;
-                    var boardDto = entry.Value;
-
-                    if (!string.IsNullOrEmpty(player.ConnectionId))
-                    {
-                        await Clients.Client(player.ConnectionId).SendAsync("BoardUpdated", boardDto);
-                    }
+                    await Clients.Client(player.ConnectionId).SendAsync("BoardUpdated", boardDto);
                 }
-            }
-            catch (Exception ex)
-            {
-                await Clients.Caller.SendAsync("Error", ex.Message);
             }
         }
 

@@ -9,6 +9,6 @@ export interface JoinRoomRequest {
     playerGuid: string;
 }
 
-export interface SubmitClueRequest {
+export interface SubmitCluesRequest {
     words: string[];
 }

@@ -1,11 +1,11 @@
 import { createContext, type ReactNode, useContext, useState, useEffect } from "react";
 import type { BoardDataDTO } from "../models/dtos";
-import type { SubmitClueRequest} from "../models/requests";
+import type { SubmitCluesRequest} from "../models/requests";
 import { SocketContext } from "./SocketContext";
 
 export interface BoardContextType {
     board: BoardDataDTO | null;
-    submitClues: (request: SubmitClueRequest) => Promise<void>;
+    submitClues: (request: SubmitCluesRequest) => Promise<void>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -34,9 +34,9 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
         };
     }, [isConnected, con]);
 
-    const submitClues = async (request: SubmitClueRequest) => {
+    const submitClues = async (request: SubmitCluesRequest) => {
         if (!con) return;
-        await con.invoke("SubmitClue", request);
+        await con.invoke("SubmitClues", request);
     };
 
     return (

@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SoClover.Server.Context;
+using SoClover.Server.Filters;
 using SoClover.Server.Helpers;
 using SoClover.Server.Hubs;
 using SoClover.Server.Services;
@@ -26,7 +28,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSignalR()
+builder.Services.AddSignalR(options => options.AddFilter<HubErrorFilter>())
     .AddJsonProtocol(options => {
         options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
