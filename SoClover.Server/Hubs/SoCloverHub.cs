@@ -59,6 +59,7 @@ namespace SoClover.Server.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
+
         //game service
 
         public async Task StartGame()
@@ -67,6 +68,36 @@ namespace SoClover.Server.Hubs
             {
                 var room = await _gameService.StartGameAsync(Context.ConnectionId);
 
+                var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
+                    [.. room.Players.Select(p => p.Id)]
+                );
+
+
+                var roomData = await _roomService.GetRoomDataAsync(room.Id);
+                await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
+
+                foreach (var entry in playerBoards)
+                {
+                    var player = entry.Key;
+                    var boardDto = entry.Value;
+
+                    if (!string.IsNullOrEmpty(player.ConnectionId))
+                    {
+                        await Clients.Client(player.ConnectionId).SendAsync("BoardUpdated", boardDto);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await Clients.Caller.SendAsync("Error", ex.Message);
+            }
+        }
+
+        public async Task SubmitClues(SubmitCluesRequest request)
+        {
+            try
+            {
+                var room = await _gameService.SubmitCluesAsync(Context.ConnectionId, request.Words);
                 var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
                     [.. room.Players.Select(p => p.Id)]
                 );

@@ -8,3 +8,7 @@ export interface JoinRoomRequest {
     playerName: string;
     playerGuid: string;
 }
+
+export interface SubmitClueRequest {
+    words: string[];
+}

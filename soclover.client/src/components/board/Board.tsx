@@ -1,26 +1,51 @@
 import { BoardContext } from "../../context/BoardContext";
+import type { SubmitClueRequest } from "../../models/requests";
 import BoardSlot from "./BoardSlot";
 import styles from "./Board.module.css";
-import { useContext } from "react";
+import { useContext, useRef } from "react";
 
 export default function Board() {
     const boardContext = useContext(BoardContext);
 
+    const topRef = useRef<HTMLInputElement>(null);
+    const rightRef = useRef<HTMLInputElement>(null);
+    const bottomRef = useRef<HTMLInputElement>(null);
+    const leftRef = useRef<HTMLInputElement>(null);
+
+
     if (!boardContext || !boardContext.board)
         return <div>Board loading...</div>;
 
-    const { board } = boardContext;
+
+    const { board, submitClues } = boardContext;
+
+    const handleReadyClick = () => {
+        const request: SubmitClueRequest = {words: [
+            topRef.current?.value || "",
+            rightRef.current?.value || "",
+            bottomRef.current?.value || "",
+            leftRef.current?.value || ""]
+        };
+
+        if (request.words.some(x => x === "")) {
+            alert("There are empty inputs");
+            return;
+        }
+
+        submitClues(request);
+    };
 
     return (
         <div className={styles.boardContainer}>
             <div className={styles.inputRow}>
                 <input
+                    ref={topRef}
                     className={`${styles.clueInput} ${styles.top}`}
                 />
             </div>
 
             <div className={styles.middleRow}>
-                <input
+                <input ref={leftRef}
                     className={`${styles.clueInput} ${styles.left}`}
                 />
 
@@ -32,16 +57,20 @@ export default function Board() {
                         ))}
                 </div>
 
-                <input
+                <input ref={rightRef}
                     className={`${styles.clueInput} ${styles.right}`}
                 />
             </div>
 
             <div className={styles.inputRow}>
-                <input
+                <input ref={bottomRef}
                     className={`${styles.clueInput} ${styles.bottom}`}
                 />
             </div>
+
+            <button className="btn btn-primary mt-3" onClick={handleReadyClick}>
+                Ready
+            </button>
         </div>
     );
 }

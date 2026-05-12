@@ -20,9 +20,11 @@ export default function Game() {
                         <div className="card-body">
                             <h6 className="text-muted">Room: {room.roomCode}</h6>
                             <UsersList />
-                            <button className="btn btn-success w-100 mt-3" onClick={room.startGame}>
-                                Start Game
-                            </button>
+                            {room.status === GameStatus.Lobby && (
+                                <button className="btn btn-success w-100 mt-3" onClick={room.startGame}>
+                                    Start Game
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

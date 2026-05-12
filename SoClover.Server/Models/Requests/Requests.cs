@@ -12,4 +12,10 @@
         public string PlayerName { get; set; } = string.Empty;
         public Guid PlayerGuid { get; set; }
     }
+
+
+    public class SubmitCluesRequest
+    {
+        public string[] Words { get; set; } = [];
+    }
 }

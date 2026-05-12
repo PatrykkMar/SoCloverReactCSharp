@@ -9,6 +9,7 @@ namespace SoClover.Server.Services
     public interface IGameService
     {
         public Task<GameRoom> StartGameAsync(string roomCode);
+        Task<GameRoom> SubmitCluesAsync(string playerConnectionId, string[] words);
         Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int[] playersId);
     }
 
@@ -30,6 +31,35 @@ namespace SoClover.Server.Services
 
 
             await _cardManager.AssignCardsToPlayersAsync([.. room.Players.Select(x => x.Id)], room.Id);
+            await _context.SaveChangesAsync();
+            return room;
+        }
+
+
+        public async Task<GameRoom> SubmitCluesAsync(string playerConnectionId, string[] words)
+        {
+            var room = await _context.GameRooms
+                .Include(r => r.Players)
+                    .ThenInclude(p => p.Board)
+                .FirstOrDefaultAsync(r => r.Players.Any(p => p.ConnectionId == playerConnectionId));
+
+            if (room == null) throw new Exception("Room not found");
+
+            room.Status = GameStatus.Solving;
+            var currentPlayer = room.Players.First(p => p.ConnectionId == playerConnectionId);
+            var board = currentPlayer.Board;
+
+            if (board == null) throw new Exception("Player board not found");
+
+            if (words.Length >= 4)
+            {
+                board.TopClue = words[0];
+                board.RightClue = words[1];
+                board.BottomClue = words[2];
+                board.LeftClue = words[3];
+            }
+            currentPlayer.IsReady = true;
+
             await _context.SaveChangesAsync();
             return room;
         }
