@@ -10,7 +10,7 @@ namespace SoClover.Server.Services
     {
         public Task<GameRoom> StartGameAsync(string roomCode);
         Task<GameRoom> SubmitCluesAsync(string playerConnectionId, string[] words);
-        Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int[] playersId);
+        Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int[] playersId, int? activePlayerId = null);
     }
 
     public class GameService(SoCloverDBContext context, ICardManager cardManager) : IGameService
@@ -51,6 +51,9 @@ namespace SoClover.Server.Services
 
             if (board == null) throw new Exception("Player board not found");
 
+            board.IsActive = true;
+            room.ActivePlayer = currentPlayer;
+
             if (words.Length >= 4)
             {
                 board.TopClue = words[0];
@@ -64,7 +67,7 @@ namespace SoClover.Server.Services
             return room;
         }
 
-        public async Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int[] playersId)
+        public async Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int[] playersId, int? activePlayerId = null)
         {
             var dict = new Dictionary<Player, BoardDataDTO>();
             var players = await _context.Players
@@ -74,6 +77,19 @@ namespace SoClover.Server.Services
                 .ThenInclude(grc => grc.Card)
                 .Where(p => playersId.Contains(p.Id))
                 .ToListAsync();
+
+
+            if(activePlayerId.HasValue)
+            {
+                var activePlayer = players.FirstOrDefault(p => p.Id == activePlayerId.Value) ?? throw new Exception("Active player not found in the provided list of players");
+                if (activePlayer.Board == null) throw new Exception("Active player board not found");
+
+                dict = players.ToDictionary(
+                    p => p,
+                    p => new BoardDataDTO(activePlayer.Board)
+                );
+                return dict;
+            }
 
             dict = players.ToDictionary(
                 p => p,

@@ -87,12 +87,12 @@ namespace SoClover.Server.Helpers
                     if (!cardsQueue.TryDequeue(out var card)) break;
 
                     card.Location = CardLocation.OnBoard;
+                    card.PositionIndex = i;
+                    card.CurrentRotation = 0;
 
                     board.BoardSlots.Add(new BoardSlot
                     {
-                        GameRoomCard = card,
-                        PositionIndex = i,
-                        CurrentRotation = 0
+                        GameRoomCard = card
                     });
                 }
                 _context.Boards.Add(board);
@@ -109,7 +109,7 @@ namespace SoClover.Server.Helpers
             card.Location = CardLocation.OnBoard;
 
             var existingSlot = await _context.BoardSlots
-                .FirstOrDefaultAsync(s => s.BoardId == boardId && s.PositionIndex == position);
+                .FirstOrDefaultAsync(s => s.BoardId == boardId);
 
             if (existingSlot != null)
             {
@@ -120,16 +120,13 @@ namespace SoClover.Server.Helpers
                 }
 
                 existingSlot.GameRoomCardId = gameRoomCardId;
-                existingSlot.CurrentRotation = 0;
             }
             else
             {
                 _context.BoardSlots.Add(new BoardSlot
                 {
                     BoardId = boardId,
-                    GameRoomCardId = gameRoomCardId,
-                    PositionIndex = position,
-                    CurrentRotation = 0
+                    GameRoomCardId = gameRoomCardId
                 });
             }
 

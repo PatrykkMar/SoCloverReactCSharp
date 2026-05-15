@@ -72,8 +72,7 @@ namespace SoClover.Tests.Helpers
             var slot = new BoardSlot
             {
                 BoardId = 50,
-                GameRoomCardId = 2,
-                PositionIndex = 0
+                GameRoomCardId = 2
             };
             context.BoardSlots.Add(slot);
             await context.SaveChangesAsync();
@@ -88,7 +87,7 @@ namespace SoClover.Tests.Helpers
             updatedCard1.Location.Should().Be(CardLocation.OnBoard);
             updatedCard2.Location.Should().Be(CardLocation.InHand);
 
-            var currentSlot = await context.BoardSlots.FirstAsync(s => s.BoardId == 50 && s.PositionIndex == 0);
+            var currentSlot = await context.BoardSlots.FirstAsync(s => s.BoardId == 50);
             currentSlot.GameRoomCardId.Should().Be(1);
         }
 
@@ -151,8 +150,7 @@ namespace SoClover.Tests.Helpers
             var slot = new BoardSlot
             {
                 Id = 1,
-                GameRoomCardId = 100,
-                PositionIndex = 0
+                GameRoomCardId = 100
             };
 
             context.GameRoomCards.Add(card);

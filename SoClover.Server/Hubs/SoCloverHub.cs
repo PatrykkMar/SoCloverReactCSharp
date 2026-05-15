@@ -83,7 +83,7 @@ namespace SoClover.Server.Hubs
         {
             var room = await _gameService.SubmitCluesAsync(Context.ConnectionId, request.Words);
             var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
-                [.. room.Players.Select(p => p.Id)]
+                [.. room.Players.Select(p => p.Id)], room.ActivePlayerId
             );
 
 

@@ -1,16 +1,33 @@
 import { BoardContext } from "../../context/BoardContext";
 import type { SubmitCluesRequest } from "../../models/requests";
-import BoardSlot from "./BoardSlot";
+import Card from "./Card";
 import styles from "./Board.module.css";
-import { useContext, useRef } from "react";
+import { useContext, useState, useEffect } from "react";
 
 export default function Board() {
     const boardContext = useContext(BoardContext);
 
-    const topRef = useRef<HTMLInputElement>(null);
-    const rightRef = useRef<HTMLInputElement>(null);
-    const bottomRef = useRef<HTMLInputElement>(null);
-    const leftRef = useRef<HTMLInputElement>(null);
+    const [clues, setClues] = useState({
+        top: "",
+        right: "",
+        bottom: "",
+        left: ""
+    });
+
+
+    useEffect(() => {
+        if (boardContext?.board) {
+            const setCluesAsync = async () => {
+                setClues({
+                    top: boardContext?.board?.topClue || "",
+                    right: boardContext?.board?.rightClue || "",
+                    bottom: boardContext?.board?.bottomClue || "",
+                    left: boardContext?.board?.leftClue || ""
+                })
+            };
+            setCluesAsync();
+        }
+    }, [boardContext?.board]);
 
 
     if (!boardContext || !boardContext.board)
@@ -19,19 +36,23 @@ export default function Board() {
 
     const { board, submitClues } = boardContext;
 
-    const handleReadyClick = () => {
-        const request: SubmitCluesRequest = {words: [
-            topRef.current?.value || "",
-            rightRef.current?.value || "",
-            bottomRef.current?.value || "",
-            leftRef.current?.value || ""]
-        };
 
-        if (request.words.some(x => x === "")) {
+
+
+    const handleInputChange = (direction: keyof typeof clues, value: string) => {
+        if (board.isActive) return;
+        setClues(prev => ({ ...prev, [direction]: value }));
+    };
+
+    const handleSubmitClues = () => {
+        const words = [clues.top, clues.right, clues.bottom, clues.left];
+
+        if (words.some(x => x.trim() === "")) {
             alert("There are empty inputs");
             return;
         }
 
+        const request: SubmitCluesRequest = { words };
         submitClues(request);
     };
 
@@ -39,38 +60,55 @@ export default function Board() {
         <div className={styles.boardContainer}>
             <div className={styles.inputRow}>
                 <input
-                    ref={topRef}
+                    value={clues.top}
+                    onChange={(e) => handleInputChange("top", e.target.value)}
                     className={`${styles.clueInput} ${styles.top}`}
+                    readOnly={board.isActive}
+                    placeholder="Top clue..."
                 />
             </div>
 
             <div className={styles.middleRow}>
-                <input ref={leftRef}
+                <input
+                    value={clues.left}
+                    onChange={(e) => handleInputChange("left", e.target.value)}
                     className={`${styles.clueInput} ${styles.left}`}
+                    readOnly={board.isActive}
+                    placeholder="Left..."
                 />
 
                 <div className={styles.grid}>
-                    {board.boardSlots
+                    {board.cards
                         .sort((a, b) => a.positionIndex - b.positionIndex)
                         .map((slot) => (
-                            <BoardSlot key={slot.positionIndex} slot={slot} />
+                            <Card key={slot.positionIndex} slot={slot} />
                         ))}
                 </div>
 
-                <input ref={rightRef}
+                <input
+                    value={clues.right}
+                    onChange={(e) => handleInputChange("right", e.target.value)}
                     className={`${styles.clueInput} ${styles.right}`}
+                    readOnly={board.isActive}
+                    placeholder="Right..."
                 />
             </div>
 
             <div className={styles.inputRow}>
-                <input ref={bottomRef}
+                <input
+                    value={clues.bottom}
+                    onChange={(e) => handleInputChange("bottom", e.target.value)}
                     className={`${styles.clueInput} ${styles.bottom}`}
+                    readOnly={board.isActive}
+                    placeholder="Bottom clue..."
                 />
             </div>
 
-            <button className="btn btn-primary mt-3" onClick={handleReadyClick}>
-                Ready
-            </button>
+            {!board.isActive && (
+                <button className="btn btn-primary mt-3" onClick={handleSubmitClues}>
+                    Submit clues
+                </button>
+            )}
         </div>
     );
 }

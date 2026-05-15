@@ -88,7 +88,7 @@ namespace SoClover.Server.Models
 
         [StringLength(50)]
         public string? LeftClue { get; set; }
-
+        public bool IsActive { get; set; }
 
         public Player Player { get; set; } = null!;
         public ICollection<BoardSlot> BoardSlots { get; set; } = new List<BoardSlot>();
@@ -98,12 +98,7 @@ namespace SoClover.Server.Models
     {
         public int BoardId { get; set; }
         public int? GameRoomCardId { get; set; }
-
-        public int PositionIndex { get; set; } // 0-3
-        public int CurrentRotation { get; set; } // 0, 90, 180, 270
         public bool IsCorrect { get; set; }
-
-
         public Board Board { get; set; } = null!;
         public GameRoomCard? GameRoomCard { get; set; }
     }
@@ -112,6 +107,8 @@ namespace SoClover.Server.Models
     {
         public int GameRoomId { get; set; }
         public int CardId { get; set; }
+        public int PositionIndex { get; set; } // 0-3
+        public int CurrentRotation { get; set; } // 0, 90, 180, 270
 
         public CardLocation Location { get; set; }
 
