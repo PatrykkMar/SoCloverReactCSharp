@@ -3,9 +3,12 @@ import type { SubmitCluesRequest } from "../../models/requests";
 import Card from "./Card";
 import styles from "./Board.module.css";
 import { useContext, useState, useEffect } from "react";
+import { RoomContext } from "../../context/RoomContext";
+import { GameStatus } from "../../models/dtos";
 
 export default function Board() {
     const boardContext = useContext(BoardContext);
+    const roomContext = useContext(RoomContext);
 
     const [clues, setClues] = useState({
         top: "",
@@ -32,6 +35,9 @@ export default function Board() {
 
     if (!boardContext || !boardContext.board)
         return <div>Board loading...</div>;
+
+    if (!roomContext)
+        return <div>Room loading...</div>;
 
 
     const { board, submitClues } = boardContext;
@@ -104,7 +110,7 @@ export default function Board() {
                 />
             </div>
 
-            {!board.isActive && (
+            {roomContext?.status === GameStatus.Writing && (
                 <button className="btn btn-primary mt-3" onClick={handleSubmitClues}>
                     Submit clues
                 </button>
