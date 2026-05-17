@@ -14,13 +14,13 @@
                 CurrentRotation = bs.GameRoomCard?.CurrentRotation ?? 0,
                 PositionIndex = bs.PositionIndex
             })];
-            IsActive = board.IsActive;
+            InputsActive = board.IsActive;
 
             TopClue = board.TopClue;
             RightClue = board.RightClue;
             BottomClue = board.BottomClue;
             LeftClue = board.LeftClue;
-            IsActive = isActive;
+            InputsActive = isActive;
             Hand = [.. board.Player.GameRoom.GameRoomCards.Where(grc => grc.Location == CardLocation.InHand).Select(grc => new CardDTO
             {
                 GameRoomCardId = grc.Id,
@@ -38,7 +38,7 @@
         public string? RightClue { get; set; } 
         public string? BottomClue { get; set; } 
         public string? LeftClue { get; set; }
-        public bool IsActive { get; set; } = false;
+        public bool InputsActive { get; set; } = false;
     }
 
     public class CardDTO
