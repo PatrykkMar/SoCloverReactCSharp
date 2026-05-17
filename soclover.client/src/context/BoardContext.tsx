@@ -6,6 +6,7 @@ import { SocketContext } from "./SocketContext";
 export interface BoardContextType {
     board: BoardDataDTO | null;
     submitClues: (request: SubmitCluesRequest) => Promise<void>;
+    rotateCard: (positionIndex: number) => Promise<void>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -39,8 +40,13 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
         await con.invoke("SubmitClues", request);
     };
 
+    const rotateCard = async (positionIndex: number) => {
+        if (!con) return;
+        await con.invoke("RotateCard", { positionIndex });
+    };
+
     return (
-        <BoardContext.Provider value={{ board, submitClues }}>
+        <BoardContext.Provider value={{ board, submitClues, rotateCard }}>
             {children}
         </BoardContext.Provider>
     );

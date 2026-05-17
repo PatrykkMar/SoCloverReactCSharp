@@ -87,12 +87,11 @@ namespace SoClover.Server.Helpers
                     if (!cardsQueue.TryDequeue(out var card)) break;
 
                     card.Location = CardLocation.OnBoard;
-                    card.PositionIndex = i;
-                    card.CurrentRotation = 0;
+                    card.CurrentRotation = new Random().Next(0, 4);
 
                     board.BoardSlots.Add(new BoardSlot
                     {
-                        GameRoomCard = card
+                        GameRoomCard = card, PositionIndex = i
                     });
                 }
                 _context.Boards.Add(board);

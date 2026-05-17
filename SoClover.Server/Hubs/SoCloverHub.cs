@@ -102,5 +102,29 @@ namespace SoClover.Server.Hubs
             }
         }
 
+
+        public async Task RotateCard(SubmitCluesRequest request)
+        {
+            var room = await _gameService.SubmitCluesAsync(Context.ConnectionId, request.Words);
+            var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
+                [.. room.Players.Select(p => p.Id)], room.ActivePlayerId
+            );
+
+
+            var roomData = await _roomService.GetRoomDataAsync(room.Id);
+            await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
+
+            foreach (var entry in playerBoards)
+            {
+                var player = entry.Key;
+                var boardDto = entry.Value;
+
+                if (!string.IsNullOrEmpty(player.ConnectionId))
+                {
+                    await Clients.Client(player.ConnectionId).SendAsync("BoardUpdated", boardDto);
+                }
+            }
+        }
+
     }
 }

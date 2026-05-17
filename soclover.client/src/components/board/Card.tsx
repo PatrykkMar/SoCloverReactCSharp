@@ -1,11 +1,11 @@
-import type { CardDTO } from "../../models/dtos";
-import styles from "./Board.module.css";
-
+﻿import type { CardDTO } from "../../models/dtos";
+import styles from "./card.module.css";
 interface Props {
     slot: CardDTO;
 }
 
 export default function Card({ slot }: Props) {
+
 
     const rotationDegrees = slot.currentRotation * 90;
 

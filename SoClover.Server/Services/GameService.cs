@@ -40,7 +40,9 @@ namespace SoClover.Server.Services
         {
             var room = await _context.GameRooms
                 .Include(r => r.Players)
-                    .ThenInclude(p => p.Board)
+                .ThenInclude(p => p.Board)
+                .ThenInclude(b => b.BoardSlots)
+                .ThenInclude(bs => bs.GameRoomCard)
                 .FirstOrDefaultAsync(r => r.Players.Any(p => p.ConnectionId == playerConnectionId));
 
             if (room == null) throw new Exception("Room not found");
@@ -61,6 +63,28 @@ namespace SoClover.Server.Services
                 board.BottomClue = words[2];
                 board.LeftClue = words[3];
             }
+            else
+            {
+                throw new Exception("Not enough clues provided");
+            }
+
+            foreach (var bs in board.BoardSlots)
+            {
+                if (bs.GameRoomCard == null) throw new Exception("GameRoomCard not found");
+                bs.GameRoomCard.Location = CardLocation.InHand;
+                bs.TargetGameRoomCard = bs.GameRoomCard;
+                bs.TargetRotation = bs.GameRoomCard?.CurrentRotation;
+                bs.GameRoomCard = null;
+            }
+
+            var twoAdditionalCards = await _context.GameRoomCards
+                .Where(grc => grc.GameRoomId == room.Id && grc.Location == CardLocation.InDeck)
+                .Take(2)
+                .ToListAsync();
+
+            foreach (var grc in twoAdditionalCards)
+                grc.Location = CardLocation.InHand;
+
             currentPlayer.IsReady = true;
 
             await _context.SaveChangesAsync();

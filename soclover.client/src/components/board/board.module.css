@@ -23,30 +23,6 @@
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
-.slot {
-    width: 200px;
-    height: 200px;
-    background-color: #ecf0f1;
-    border: 2px dashed #bdc3c7;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.card {
-    width: 100%;
-    height: 100%;
-    background-color: white;
-    border: 1px solid #000;
-    position: relative;
-    font-size: 14px;
-    font-weight: bold;
-}
-
 .clueInput {
     border: 2px solid #27ae60;
     border-radius: 8px;
@@ -68,32 +44,4 @@
 
 .left, .right {
     width: 120px;
-}
-
-.wordTop {
-    position: absolute;
-    top: 5px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.wordRight {
-    position: absolute;
-    right: 5px;
-    top: 50%;
-    transform: translateY(-50%) rotate(90deg);
-}
-
-.wordBottom {
-    position: absolute;
-    bottom: 5px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.wordLeft {
-    position: absolute;
-    left: 5px;
-    top: 50%;
-    transform: translateY(-50%) rotate(-90deg);
 }

@@ -12,16 +12,18 @@ export interface RoomDataDTO {
 }
 
 export interface CardDTO {
+    gameRoomCardId: number;
     wordTop: string;
     wordRight: string;
     wordBottom: string;
     wordLeft: string;
     currentRotation: number;
-    positionIndex: number;
+    positionIndex: number | undefined; //position on board
 }
 
 export interface BoardDataDTO {
     cards: CardDTO[];
+    hand: CardDTO[];
     topClue: string;
     rightClue: string;
     bottomClue: string;
