@@ -21,6 +21,15 @@
             BottomClue = board.BottomClue;
             LeftClue = board.LeftClue;
             IsActive = isActive;
+            Hand = [.. board.Player.GameRoom.GameRoomCards.Where(grc => grc.Location == CardLocation.InHand).Select(grc => new CardDTO
+            {
+                GameRoomCardId = grc.Id,
+                WordTop = grc.Card.WordTop,
+                WordRight = grc.Card.WordRight,
+                WordBottom = grc.Card.WordBottom,
+                WordLeft = grc.Card.WordLeft,
+                CurrentRotation = grc.CurrentRotation
+            })];
         }
 
         public CardDTO[] Cards { get; set; } = [];

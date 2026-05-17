@@ -102,6 +102,8 @@ namespace SoClover.Server.Services
                 .ThenInclude(b => b.BoardSlots)
                 .ThenInclude(bs => bs.GameRoomCard)
                 .ThenInclude(grc => grc.Card)
+                .Include(r => r.GameRoomCards)
+                .ThenInclude(grc => grc.Card)
                 .FirstOrDefaultAsync(r => r.Id == roomId);
 
             if(room == null) throw new Exception($"Room {roomId} not found");

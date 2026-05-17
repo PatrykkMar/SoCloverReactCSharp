@@ -5,6 +5,7 @@ import styles from "./Board.module.css";
 import { useContext, useState, useEffect } from "react";
 import { RoomContext } from "../../context/RoomContext";
 import { GameStatus } from "../../models/dtos";
+import Hand from "./Hand";
 
 export default function Board() {
     const boardContext = useContext(BoardContext);
@@ -43,7 +44,7 @@ export default function Board() {
     const { board, submitClues } = boardContext;
 
 
-
+    const handCards = board.hand;
 
     const handleInputChange = (direction: keyof typeof clues, value: string) => {
         if (!board.isActive) return;
@@ -114,6 +115,9 @@ export default function Board() {
                 <button className="btn btn-primary mt-3" onClick={handleSubmitClues}>
                     Submit clues
                 </button>
+            )}
+            {roomContext.status === GameStatus.Solving && (
+                <Hand cards={handCards} />
             )}
         </div>
     );
