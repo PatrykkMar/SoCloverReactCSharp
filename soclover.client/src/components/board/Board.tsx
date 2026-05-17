@@ -46,7 +46,7 @@ export default function Board() {
 
 
     const handleInputChange = (direction: keyof typeof clues, value: string) => {
-        if (board.isActive) return;
+        if (!board.isActive) return;
         setClues(prev => ({ ...prev, [direction]: value }));
     };
 
@@ -69,7 +69,7 @@ export default function Board() {
                     value={clues.top}
                     onChange={(e) => handleInputChange("top", e.target.value)}
                     className={`${styles.clueInput} ${styles.top}`}
-                    readOnly={board.isActive}
+                    readOnly={!board.isActive}
                     placeholder="Top clue..."
                 />
             </div>
@@ -79,13 +79,13 @@ export default function Board() {
                     value={clues.left}
                     onChange={(e) => handleInputChange("left", e.target.value)}
                     className={`${styles.clueInput} ${styles.left}`}
-                    readOnly={board.isActive}
+                    readOnly={!board.isActive}
                     placeholder="Left..."
                 />
 
                 <div className={styles.grid}>
                     {board.cards
-                        .sort((a, b) => a.positionIndex - b.positionIndex)
+                        .sort((a, b) => (a.positionIndex ?? 0) - (b.positionIndex ?? 0))
                         .map((slot) => (
                             <Card key={slot.positionIndex} slot={slot} />
                         ))}
@@ -95,7 +95,7 @@ export default function Board() {
                     value={clues.right}
                     onChange={(e) => handleInputChange("right", e.target.value)}
                     className={`${styles.clueInput} ${styles.right}`}
-                    readOnly={board.isActive}
+                    readOnly={!board.isActive}
                     placeholder="Right..."
                 />
             </div>
@@ -105,7 +105,7 @@ export default function Board() {
                     value={clues.bottom}
                     onChange={(e) => handleInputChange("bottom", e.target.value)}
                     className={`${styles.clueInput} ${styles.bottom}`}
-                    readOnly={board.isActive}
+                    readOnly={!board.isActive}
                     placeholder="Bottom clue..."
                 />
             </div>

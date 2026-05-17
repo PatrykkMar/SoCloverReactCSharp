@@ -10,7 +10,7 @@ namespace SoClover.Server.Services
     {
         public Task<GameRoom> StartGameAsync(string roomCode);
         Task<GameRoom> SubmitCluesAsync(string playerConnectionId, string[] words);
-        Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int[] playersId, int? activePlayerId = null);
+        Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId);
     }
 
     public class GameService(SoCloverDBContext context, ICardManager cardManager) : IGameService
@@ -91,26 +91,32 @@ namespace SoClover.Server.Services
             return room;
         }
 
-        public async Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int[] playersId, int? activePlayerId = null)
+        public async Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId)
         {
             var dict = new Dictionary<Player, BoardDataDTO>();
-            var players = await _context.Players
-                .Include(p => p.Board)
+
+            var room = await _context.GameRooms
+                .Include(r => r.ActivePlayer)
+                .Include(r => r.Players)
+                .ThenInclude(p => p.Board)
                 .ThenInclude(b => b.BoardSlots)
                 .ThenInclude(bs => bs.GameRoomCard)
                 .ThenInclude(grc => grc.Card)
-                .Where(p => playersId.Contains(p.Id))
-                .ToListAsync();
+                .FirstOrDefaultAsync(r => r.Id == roomId);
+
+            if(room == null) throw new Exception($"Room {roomId} not found");
+
+            var players = room.Players;
 
 
-            if(activePlayerId.HasValue)
+            if(room.Status == GameStatus.Solving)
             {
-                var activePlayer = players.FirstOrDefault(p => p.Id == activePlayerId.Value) ?? throw new Exception("Active player not found in the provided list of players");
-                if (activePlayer.Board == null) throw new Exception("Active player board not found");
+                var checkedPlayer = players.FirstOrDefault(p => p.Id == room.CheckedPlayerId) ?? throw new Exception("Active player not found in a room");
+                if (checkedPlayer.Board == null) throw new Exception("Active player board not found");
 
                 dict = players.ToDictionary(
                     p => p,
-                    p => new BoardDataDTO(activePlayer.Board)
+                    p => new BoardDataDTO(checkedPlayer.Board, p.Id == checkedPlayer.Id)
                 );
                 return dict;
             }

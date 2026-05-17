@@ -2,7 +2,7 @@
 {
     public class BoardDataDTO
     {
-        public BoardDataDTO(Board board) 
+        public BoardDataDTO(Board board, bool isActive = true) 
         {
             Cards = [.. board.BoardSlots.Select(bs => new CardDTO
             {
@@ -20,6 +20,7 @@
             RightClue = board.RightClue;
             BottomClue = board.BottomClue;
             LeftClue = board.LeftClue;
+            IsActive = isActive;
         }
 
         public CardDTO[] Cards { get; set; } = [];
