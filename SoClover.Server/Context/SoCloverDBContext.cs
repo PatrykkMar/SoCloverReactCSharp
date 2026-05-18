@@ -44,27 +44,29 @@ namespace SoClover.Server.Context
                 .HasMany(b => b.BoardSlots)
                 .WithOne(s => s.Board)
                 .HasForeignKey(s => s.BoardId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<BoardSlot>()
                 .HasOne(s => s.GameRoomCard)
-                .WithOne()
+                .WithOne(grc => grc.BoardSlot)
                 .HasForeignKey<BoardSlot>(s => s.GameRoomCardId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<BoardSlot>()
                 .HasOne(s => s.TargetGameRoomCard)
-                .WithMany(grc => grc.TargetBoardSlots)
-                .HasForeignKey(s => s.TargetGameRoomCardId)
+                .WithOne(grc => grc.TargetBoardSlot)
+                .HasForeignKey<BoardSlot>(s => s.TargetGameRoomCardId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<GameRoom>()
-                .Property(g => g.RoomCode);
 
             modelBuilder.Entity<GameRoomCard>().HasOne(grc => grc.Card)
                 .WithMany(c => c.GameRoomCards) 
                 .HasForeignKey(grc => grc.CardId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            //indexes
+            modelBuilder.Entity<GameRoom>().HasIndex(g => g.RoomCode) .IsUnique();
+            modelBuilder.Entity<Player>().HasIndex(p => p.PlayerGuid).IsUnique();
+            modelBuilder.Entity<Player>().HasIndex(p => p.ConnectionId);
 
             CardSeeder.Seed(modelBuilder);
         }
