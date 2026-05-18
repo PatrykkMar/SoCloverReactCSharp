@@ -103,17 +103,12 @@ namespace SoClover.Server.Hubs
         }
 
 
-        public async Task RotateCard(SubmitCluesRequest request)
+        public async Task RotateCard(RotateCardRequest request)
         {
-            var room = await _gameService.SubmitCluesAsync(Context.ConnectionId, request.Words);
+            var room = await _gameService.RotateCard(request.GameRoomCardId);
             var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
                 room.Id
             );
-
-
-            var roomData = await _roomService.GetRoomDataAsync(room.Id);
-            await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
-
             foreach (var entry in playerBoards)
             {
                 var player = entry.Key;

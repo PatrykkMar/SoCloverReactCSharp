@@ -12,3 +12,7 @@ export interface JoinRoomRequest {
 export interface SubmitCluesRequest {
     words: string[];
 }
+
+export interface RotateCardRequest {
+    gameRoomCardId: number;
+}

@@ -11,6 +11,7 @@ namespace SoClover.Server.Services
         public Task<GameRoom> StartGameAsync(string roomCode);
         Task<GameRoom> SubmitCluesAsync(string playerConnectionId, string[] words);
         Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId);
+        Task<GameRoom> RotateCard(int gameRoomCardId);
     }
 
     public class GameService(SoCloverDBContext context, ICardManager cardManager) : IGameService
@@ -54,7 +55,7 @@ namespace SoClover.Server.Services
             if (board == null) throw new Exception("Player board not found");
 
             board.IsActive = true;
-            room.ActivePlayer = currentPlayer;
+            room.CheckedPlayer = currentPlayer;
 
             if (words.Length >= 4)
             {
@@ -96,7 +97,7 @@ namespace SoClover.Server.Services
             var dict = new Dictionary<Player, BoardDataDTO>();
 
             var room = await _context.GameRooms
-                .Include(r => r.ActivePlayer)
+                .Include(r => r.CheckedPlayer)
                 .Include(r => r.Players)
                 .ThenInclude(p => p.Board)
                 .ThenInclude(b => b.BoardSlots)
@@ -113,8 +114,8 @@ namespace SoClover.Server.Services
 
             if(room.Status == GameStatus.Solving)
             {
-                var checkedPlayer = players.FirstOrDefault(p => p.Id == room.CheckedPlayerId) ?? throw new Exception("Active player not found in a room");
-                if (checkedPlayer.Board == null) throw new Exception("Active player board not found");
+                var checkedPlayer = room.CheckedPlayer;
+                if (checkedPlayer?.Board == null) throw new Exception("Active player board not found");
 
                 dict = players.ToDictionary(
                     p => p,
@@ -128,6 +129,17 @@ namespace SoClover.Server.Services
                 p => new BoardDataDTO(p.Board)
             );
             return dict;
+        }
+
+        public async Task<GameRoom> RotateCard(int gameRoomCardId)
+        {
+            var card = await _context
+                .GameRoomCards
+                .Include(grc => grc.GameRoom)
+                .FirstOrDefaultAsync(grc => grc.Id == gameRoomCardId) ?? throw new Exception("Card not found");
+            card.CurrentRotation = (card.CurrentRotation + 1) % 4;
+            await _context.SaveChangesAsync();
+            return card.GameRoom;
         }
     }
 }

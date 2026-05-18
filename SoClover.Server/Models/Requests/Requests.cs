@@ -18,4 +18,9 @@
     {
         public string[] Words { get; set; } = [];
     }
+
+    public class RotateCardRequest
+    {
+        public int GameRoomCardId { get; set; }
+    }
 }

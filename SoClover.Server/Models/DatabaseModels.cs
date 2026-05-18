@@ -29,7 +29,7 @@ namespace SoClover.Server.Models
 
 
 
-        public Player? ActivePlayer { get; set; }
+        public Player? CheckedPlayer { get; set; }
         public ICollection<Player> Players { get; set; } = new List<Player>();
         public ICollection<GameRoomCard> GameRoomCards { get; set; } = new List<GameRoomCard>();
     }

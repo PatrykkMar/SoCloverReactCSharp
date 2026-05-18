@@ -5,6 +5,13 @@ export const GameStatus = {
     Finished: "Finished",
 } as const;
 
+export const CardLocation = {
+    InDeck: "InDeck",
+    Discarded: "Discarded",
+    InHand: "InHand",
+    OnBoard: "OnBoard",
+} as const;
+
 export interface RoomDataDTO {
     roomCode: string;
     players: string[];
@@ -19,14 +26,15 @@ export interface CardDTO {
     wordLeft: string;
     currentRotation: number;
     positionIndex: number | undefined; //position on board
+    location: string;
 }
 
 export interface BoardDataDTO {
     cards: CardDTO[];
-    hand: CardDTO[];
     topClue: string;
     rightClue: string;
     bottomClue: string;
     leftClue: string;
-    isActive: boolean;
+    inputsActive: boolean;
+    cardsActive: boolean;
 }

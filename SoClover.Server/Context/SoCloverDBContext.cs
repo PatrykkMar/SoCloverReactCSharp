@@ -24,7 +24,7 @@ namespace SoClover.Server.Context
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<GameRoom>()
-                .HasOne(g => g.ActivePlayer)
+                .HasOne(g => g.CheckedPlayer)
                 .WithMany()
                 .HasForeignKey(g => g.CheckedPlayerId)
                 .OnDelete(DeleteBehavior.Restrict);
