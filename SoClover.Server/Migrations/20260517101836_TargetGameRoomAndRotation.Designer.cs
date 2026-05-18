@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SoClover.Server.Context;
 
@@ -11,9 +12,11 @@ using SoClover.Server.Context;
 namespace SoClover.Server.Migrations
 {
     [DbContext(typeof(SoCloverDBContext))]
-    partial class SoCloverDBContextModelSnapshot : ModelSnapshot
+    [Migration("20260517101836_TargetGameRoomAndRotation")]
+    partial class TargetGameRoomAndRotation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -961,7 +964,7 @@ namespace SoClover.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("CheckedPlayerId")
+                    b.Property<int?>("ActivePlayerId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -980,7 +983,7 @@ namespace SoClover.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CheckedPlayerId");
+                    b.HasIndex("ActivePlayerId");
 
                     b.ToTable("GameRooms");
                 });
@@ -1106,7 +1109,7 @@ namespace SoClover.Server.Migrations
                 {
                     b.HasOne("SoClover.Server.Models.Player", "ActivePlayer")
                         .WithMany()
-                        .HasForeignKey("CheckedPlayerId")
+                        .HasForeignKey("ActivePlayerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ActivePlayer");

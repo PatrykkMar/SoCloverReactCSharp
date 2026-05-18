@@ -1,7 +1,11 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SoClover.Server.Context;
+using SoClover.Server.Filters;
+using SoClover.Server.Helpers;
 using SoClover.Server.Hubs;
 using SoClover.Server.Services;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,16 +23,26 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options => options.AddFilter<HubErrorFilter>())
+    .AddJsonProtocol(options => {
+        options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 // Register application services
 builder.Services.AddTransient<IGameService, GameService>();
 builder.Services.AddTransient<IRoomService, RoomService>();
+
+//Helpers
+builder.Services.AddTransient<ICardManager, CardManager>();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<SoCloverDBContext>(options =>

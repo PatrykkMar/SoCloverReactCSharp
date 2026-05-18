@@ -1,14 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SoClover.Server.Context;
+using SoClover.Server.Helpers;
 using SoClover.Server.Models;
+using SoClover.Server.Models.DTOs;
 
 namespace SoClover.Server.Services
 {
     public interface IRoomService
     {
         Task<GameRoom> CreateRoomAsync();
-        Task<Player> JoinRoomAsync(string roomCode, string playerName, string connectionId);
-        Task<int?> LeaveRoomAsync(string connectionId);
+        Task<RoomDataDTO> JoinRoomAsync(string roomCode, string playerName, string connectionId, Guid playerGuid);
+        Task<RoomDataDTO?> LeaveRoomAsync(string connectionId);
+        Task<RoomDataDTO> GetRoomDataAsync(int roomId);
     }
 
     public class RoomService(SoCloverDBContext context) : IRoomService
@@ -24,19 +27,29 @@ namespace SoClover.Server.Services
                 Status = GameStatus.Lobby
             };
 
+            var cards = await _context.Cards.ToListAsync();
+
+            var deck = cards.Select(c => new GameRoomCard
+            {
+                CardId = c.Id,
+                GameRoom = room
+            }).ToList();
+
+            room.GameRoomCards = deck;
+
             _context.GameRooms.Add(room);
             await _context.SaveChangesAsync();
             return room;
         }
 
-        public async Task<Player> JoinRoomAsync(string roomCode, string playerName, string connectionId)
+        public async Task<RoomDataDTO> JoinRoomAsync(string roomCode, string playerName, string connectionId, Guid playerGuid)
         {
             var room = await _context.GameRooms
                 .Include(r => r.Players)
                 .FirstOrDefaultAsync(r => r.RoomCode == roomCode.ToUpper());
 
             if (room == null) throw new Exception("Room does not exist");
-            if (room.Status != GameStatus.Lobby) throw new Exception("Game just started");
+            if (room.Status != GameStatus.Lobby) throw new Exception("Game just started"); //TODO: Possibility to join a game in progress
             if (room.Players.Count >= 6) throw new Exception("Room is full");
 
             var player = new Player
@@ -44,36 +57,41 @@ namespace SoClover.Server.Services
                 Name = playerName,
                 ConnectionId = connectionId,
                 GameRoomId = room.Id,
+                PlayerGuid = playerGuid,
                 IsReady = false,
                 Score = 0
             };
 
-            _context.Players.Add(player);
+            room.Players.Add(player);
+
             await _context.SaveChangesAsync();
-            return player;
+            return await GetRoomDataAsync(room.Id);
         }
 
-        public async Task<int?> LeaveRoomAsync(string connectionId)
+        public async Task<RoomDataDTO?> LeaveRoomAsync(string connectionId)
         {
             var player = await _context.Players
+                .Include(p => p.GameRoom)
+                    .ThenInclude(r => r.Players)
                 .FirstOrDefaultAsync(p => p.ConnectionId == connectionId);
 
             if (player == null) return null;
 
-            int roomId = player.GameRoomId;
-            _context.Players.Remove(player);
-            await _context.SaveChangesAsync();
+            var room = player.GameRoom;
+            var roomId = room.Id;
 
-            var anyLeft = await _context.Players.AnyAsync(p => p.GameRoomId == roomId);
+            _context.Players.Remove(player);
+
+            bool anyLeft = room.Players.Any(p => p.Id != player.Id);
+
             if (!anyLeft)
             {
-                var room = await _context.GameRooms.FindAsync(roomId);
-                if (room != null) _context.GameRooms.Remove(room);
-                await _context.SaveChangesAsync();
-                return null;
+                _context.GameRooms.Remove(room);
             }
 
-            return roomId;
+            await _context.SaveChangesAsync();
+
+            return await GetRoomDataAsync(room.Id);
         }
 
         private string GenerateRoomCode()
@@ -88,6 +106,17 @@ namespace SoClover.Server.Services
             while (_context.GameRooms.Any(r => r.RoomCode == code));
 
             return code;
+        }
+
+        public async Task<RoomDataDTO> GetRoomDataAsync(int roomId)
+        {
+            var room = await _context.GameRooms
+                .Include(r => r.Players)
+                .FirstOrDefaultAsync(r => r.Id == roomId);
+
+            if (room == null) throw new Exception("Room not found");
+
+            return new RoomDataDTO(room);
         }
     }
 }

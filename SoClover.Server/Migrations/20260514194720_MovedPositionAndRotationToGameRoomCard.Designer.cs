@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SoClover.Server.Context;
 
@@ -11,9 +12,11 @@ using SoClover.Server.Context;
 namespace SoClover.Server.Migrations
 {
     [DbContext(typeof(SoCloverDBContext))]
-    partial class SoCloverDBContextModelSnapshot : ModelSnapshot
+    [Migration("20260514194720_MovedPositionAndRotationToGameRoomCard")]
+    partial class MovedPositionAndRotationToGameRoomCard
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,9 +39,6 @@ namespace SoClover.Server.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
 
                     b.Property<string>("LeftClue")
                         .HasMaxLength(50)
@@ -83,23 +83,11 @@ namespace SoClover.Server.Migrations
                     b.Property<int?>("GameRoomCardId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("GameRoomCardId1")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsCorrect")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("PositionIndex")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TargetGameRoomCardId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TargetRotation")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -108,12 +96,6 @@ namespace SoClover.Server.Migrations
                     b.HasIndex("GameRoomCardId")
                         .IsUnique()
                         .HasFilter("[GameRoomCardId] IS NOT NULL");
-
-                    b.HasIndex("GameRoomCardId1")
-                        .IsUnique()
-                        .HasFilter("[GameRoomCardId1] IS NOT NULL");
-
-                    b.HasIndex("TargetGameRoomCardId");
 
                     b.ToTable("BoardSlots");
                 });
@@ -961,7 +943,7 @@ namespace SoClover.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("CheckedPlayerId")
+                    b.Property<int?>("ActivePlayerId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -980,7 +962,7 @@ namespace SoClover.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CheckedPlayerId");
+                    b.HasIndex("ActivePlayerId");
 
                     b.ToTable("GameRooms");
                 });
@@ -1010,6 +992,9 @@ namespace SoClover.Server.Migrations
 
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("PositionIndex")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -1086,27 +1071,16 @@ namespace SoClover.Server.Migrations
                         .HasForeignKey("SoClover.Server.Models.BoardSlot", "GameRoomCardId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SoClover.Server.Models.GameRoomCard", null)
-                        .WithOne("BoardSlot")
-                        .HasForeignKey("SoClover.Server.Models.BoardSlot", "GameRoomCardId1");
-
-                    b.HasOne("SoClover.Server.Models.GameRoomCard", "TargetGameRoomCard")
-                        .WithMany("TargetBoardSlots")
-                        .HasForeignKey("TargetGameRoomCardId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("Board");
 
                     b.Navigation("GameRoomCard");
-
-                    b.Navigation("TargetGameRoomCard");
                 });
 
             modelBuilder.Entity("SoClover.Server.Models.GameRoom", b =>
                 {
                     b.HasOne("SoClover.Server.Models.Player", "ActivePlayer")
                         .WithMany()
-                        .HasForeignKey("CheckedPlayerId")
+                        .HasForeignKey("ActivePlayerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ActivePlayer");
@@ -1157,13 +1131,6 @@ namespace SoClover.Server.Migrations
                     b.Navigation("GameRoomCards");
 
                     b.Navigation("Players");
-                });
-
-            modelBuilder.Entity("SoClover.Server.Models.GameRoomCard", b =>
-                {
-                    b.Navigation("BoardSlot");
-
-                    b.Navigation("TargetBoardSlots");
                 });
 
             modelBuilder.Entity("SoClover.Server.Models.Player", b =>
