@@ -6,6 +6,7 @@ using SoClover.Server.Helpers;
 using SoClover.Server.Hubs;
 using SoClover.Server.Services;
 using System.Text.Json.Serialization;
+using log4net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,11 @@ builder.Services.AddCors(options =>
               .AllowCredentials();
     });
 });
+
+//Logging
+builder.Services.AddLogging(
+    x => x.AddLog4Net()
+);
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -46,7 +52,8 @@ builder.Services.AddTransient<ICardManager, CardManager>();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<SoCloverDBContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString)
+    .EnableSensitiveDataLogging());
 var app = builder.Build();
 
 app.UseCors("SoCloverPolicy");
