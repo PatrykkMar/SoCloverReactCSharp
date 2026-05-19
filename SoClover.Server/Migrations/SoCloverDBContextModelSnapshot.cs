@@ -1081,7 +1081,7 @@ namespace SoClover.Server.Migrations
                     b.HasOne("SoClover.Server.Models.Board", "Board")
                         .WithMany("BoardSlots")
                         .HasForeignKey("BoardId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("SoClover.Server.Models.GameRoomCard", "GameRoomCard")

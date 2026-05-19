@@ -44,7 +44,7 @@ namespace SoClover.Server.Context
                 .HasMany(b => b.BoardSlots)
                 .WithOne(s => s.Board)
                 .HasForeignKey(s => s.BoardId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<BoardSlot>()
                 .HasOne(s => s.GameRoomCard)

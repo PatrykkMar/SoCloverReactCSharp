@@ -36,14 +36,11 @@
         }
 
         public CardDTO[] Cards { get; set; } = [];
-        public CardDTO[] Hand { get; set; } = [];
         public string? TopClue { get; set; } 
         public string? RightClue { get; set; } 
         public string? BottomClue { get; set; } 
         public string? LeftClue { get; set; }
         public bool InputsActive { get; set; } = false;
-        public bool CardsActive { get; set; } = false;
-        public string Location { get; set; } = string.Empty;
     }
 
     public class CardDTO

@@ -18,6 +18,7 @@ namespace SoClover.Server.Services
     {
         private readonly SoCloverDBContext _context = context;
         private static readonly Random _random = new();
+        public const int CARDS_NEEDED_FOR_ROOM = 40;
 
         public async Task<GameRoom> CreateRoomAsync()
         {
@@ -27,12 +28,18 @@ namespace SoClover.Server.Services
                 Status = GameStatus.Lobby
             };
 
-            var cards = await _context.Cards.ToListAsync();
 
-            var deck = cards.Select(c => new GameRoomCard
+            var randomCard = await _context.Cards
+                .OrderBy(c => Guid.NewGuid())
+                .Take(CARDS_NEEDED_FOR_ROOM)
+                .ToListAsync();
+
+            var deck = randomCard.Select(card => new GameRoomCard
             {
-                CardId = c.Id,
-                GameRoom = room
+                Card = card,
+                GameRoom = room,
+                Location = CardLocation.InDeck,
+                CurrentRotation = 0
             }).ToList();
 
             room.GameRoomCards = deck;
@@ -49,6 +56,16 @@ namespace SoClover.Server.Services
                 .FirstOrDefaultAsync(r => r.RoomCode == roomCode.ToUpper());
 
             if (room == null) throw new Exception("Room does not exist");
+
+            var existingPlayer = _context.Players.FirstOrDefault(p => p.PlayerGuid == playerGuid);
+
+            if (existingPlayer != null)
+            {
+                existingPlayer.ConnectionId = connectionId;
+                await _context.SaveChangesAsync();
+                return await GetRoomDataAsync(room.Id);
+            }
+
             if (room.Status != GameStatus.Lobby) throw new Exception("Game just started"); //TODO: Possibility to join a game in progress
             if (room.Players.Count >= 6) throw new Exception("Room is full");
 
@@ -56,7 +73,7 @@ namespace SoClover.Server.Services
             {
                 Name = playerName,
                 ConnectionId = connectionId,
-                GameRoomId = room.Id,
+                GameRoom = room,
                 PlayerGuid = playerGuid,
                 IsReady = false,
                 Score = 0
@@ -78,9 +95,8 @@ namespace SoClover.Server.Services
             if (player == null) return null;
 
             var room = player.GameRoom;
-            var roomId = room.Id;
-
-            _context.Players.Remove(player);
+            string roomCode = room.RoomCode;
+            int roomId = room.Id;
 
             bool anyLeft = room.Players.Any(p => p.Id != player.Id);
 
@@ -88,10 +104,19 @@ namespace SoClover.Server.Services
             {
                 _context.GameRooms.Remove(room);
             }
+            else
+            {
+                _context.Players.Remove(player);
+            }
 
             await _context.SaveChangesAsync();
 
-            return await GetRoomDataAsync(room.Id);
+            if (!anyLeft)
+            {
+                return null;
+            }
+
+            return await GetRoomDataAsync(roomId);
         }
 
         private string GenerateRoomCode()
