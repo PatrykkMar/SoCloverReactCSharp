@@ -24,10 +24,9 @@ export default function Card({ slot }: Props) {
     return (
         <div
             className={styles.slot}
-            style={{ transform: `rotate(${rotationDegrees}deg)` }}
         >
             {slot ? (
-                <div className={styles.card}>
+                <div className={styles.card} style={{ transform: `rotate(${rotationDegrees}deg)` }}>
                     <div className={styles.wordTop}>{slot.wordTop}</div>
                     <div className={styles.wordRight}>{slot.wordRight}</div>
                     <div className={styles.wordBottom}>{slot.wordBottom}</div>
@@ -36,7 +35,7 @@ export default function Card({ slot }: Props) {
                     <button
                         className={styles.rotateBtn}
                         onClick={handleRotateClick}
-                        style={{ transform: `translate(-50%, -50%) rotate(${-rotationDegrees}deg)` }}
+                        style={{ transform: `translate(-50%, -50%)` }}
                         title="Rotate card"
                     >
                         ↻
