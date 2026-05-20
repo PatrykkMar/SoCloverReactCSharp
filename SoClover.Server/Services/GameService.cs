@@ -10,7 +10,7 @@ namespace SoClover.Server.Services
     {
         public Task<GameRoom> StartGameAsync(string roomCode);
         Task<GameRoom> SubmitCluesAsync(string playerConnectionId, string[] words);
-        Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId);
+        Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId, bool includingHand = false);
         Task<GameRoom> RotateCard(int gameRoomCardId);
     }
 
@@ -95,7 +95,7 @@ namespace SoClover.Server.Services
             return room;
         }
 
-        public async Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId)
+        public async Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId, bool includingHand = false)
         {
             var dict = new Dictionary<Player, BoardDataDTO>();
 
@@ -123,7 +123,7 @@ namespace SoClover.Server.Services
 
                 dict = players.ToDictionary(
                     p => p,
-                    p => new BoardDataDTO(checkedPlayer.Board, p.Id == checkedPlayer.Id)
+                    p => new BoardDataDTO(checkedPlayer.Board, p.Id == checkedPlayer.Id, includingHand)
                 );
                 return dict;
             }

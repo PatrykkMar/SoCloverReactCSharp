@@ -1,6 +1,6 @@
 import { BoardContext } from "../../context/BoardContext";
 import type { SubmitCluesRequest } from "../../models/requests";
-import Card from "./Card";
+import BoardSlot from "./BoardSlot";
 import styles from "./Board.module.css";
 import { useContext, useState, useEffect } from "react";
 import { RoomContext } from "../../context/RoomContext";
@@ -43,8 +43,7 @@ export default function Board() {
 
     const { board, submitClues } = boardContext;
 
-
-    const boardCards = board.cards.filter(card => card.location === "OnBoard");
+    const slotIndexes = [0, 1, 2, 3];
     const handCards = board.cards.filter(card => card.location === "InHand");
 
     const handleInputChange = (direction: keyof typeof clues, value: string) => {
@@ -86,11 +85,19 @@ export default function Board() {
                 />
 
                 <div className={styles.grid}>
-                    {boardCards
-                        .sort((a, b) => (a.positionIndex ?? 0) - (b.positionIndex ?? 0))
-                        .map((slot) => (
-                            <Card key={slot.positionIndex} slot={slot} />
-                        ))}
+                    {slotIndexes.map((index) => {
+                        const cardAtSlot = board.cards.find(
+                            (card) => card.location === "OnBoard" && card.positionIndex === index
+                        );
+
+                        return (
+                            <BoardSlot
+                                key={index}
+                                index={index}
+                                card={cardAtSlot}
+                            />
+                        );
+                    })}
                 </div>
 
                 <input
