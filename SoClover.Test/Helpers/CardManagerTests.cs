@@ -42,10 +42,9 @@ namespace SoClover.Tests.Helpers
             await cardManager.CreateDeckAsync(roomId: 1);
 
             // Act
-
-
             var players = await context.Players.Where(p => p.GameRoomId == 1).ToListAsync();
             await cardManager.AssignCardsToPlayersAsync(players.Select(x => x.Id).ToArray(), roomId: 1);
+            await context.SaveChangesAsync();
 
             // Assert
             var boards = await context.Boards.Include(b => b.BoardSlots).ToListAsync();
