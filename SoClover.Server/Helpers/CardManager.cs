@@ -78,26 +78,28 @@ namespace SoClover.Server.Helpers
             var allDrawnCards = await DrawCardsFromDeckAsync(roomId, 4 * playerIds.Length);
             var cardsQueue = new Queue<GameRoomCard>(allDrawnCards);
 
+            var random = new Random();
+
             foreach (var player in players)
             {
-                var board = new Board { PlayerId = player.Id };
+                var board = new Board { Player = player };
 
                 for (int i = 0; i < 4; i++)
                 {
                     if (!cardsQueue.TryDequeue(out var card)) break;
 
                     card.Location = CardLocation.OnBoard;
-                    card.CurrentRotation = new Random().Next(0, 4);
+                    card.CurrentRotation = random.Next(0, 4);
 
                     board.BoardSlots.Add(new BoardSlot
                     {
-                        GameRoomCard = card, PositionIndex = i
+                        GameRoomCard = card,
+                        TargetGameRoomCard = card,
+                        PositionIndex = i
                     });
                 }
                 _context.Boards.Add(board);
             }
-
-            await _context.SaveChangesAsync();
         }
 
         public async Task MoveToBoardAsync(int gameRoomCardId, int boardId, int position)

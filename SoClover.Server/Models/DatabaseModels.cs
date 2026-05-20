@@ -118,6 +118,6 @@ namespace SoClover.Server.Models
         public GameRoom GameRoom { get; set; } = null!;
         public Card Card { get; set; } = null!;
         public BoardSlot? BoardSlot { get; set; }
-        public ICollection<BoardSlot> TargetBoardSlots { get; set; } = new List<BoardSlot>();
+        public BoardSlot? TargetBoardSlot { get; set; }
     }
 }

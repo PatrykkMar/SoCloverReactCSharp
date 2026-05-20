@@ -83,7 +83,7 @@ namespace SoClover.Server.Hubs
         {
             var room = await _gameService.SubmitCluesAsync(Context.ConnectionId, request.Words);
             var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
-                room.Id
+                room.Id, includingHand: true
             );
 
 
@@ -107,7 +107,7 @@ namespace SoClover.Server.Hubs
         {
             var room = await _gameService.RotateCard(request.GameRoomCardId);
             var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
-                room.Id
+                room.Id, includingHand: true
             );
             foreach (var entry in playerBoards)
             {

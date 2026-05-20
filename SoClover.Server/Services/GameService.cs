@@ -10,7 +10,7 @@ namespace SoClover.Server.Services
     {
         public Task<GameRoom> StartGameAsync(string roomCode);
         Task<GameRoom> SubmitCluesAsync(string playerConnectionId, string[] words);
-        Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId);
+        Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId, bool includingHand = false);
         Task<GameRoom> RotateCard(int gameRoomCardId);
     }
 
@@ -44,11 +44,13 @@ namespace SoClover.Server.Services
                 .ThenInclude(p => p.Board)
                 .ThenInclude(b => b.BoardSlots)
                 .ThenInclude(bs => bs.GameRoomCard)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(r => r.Players.Any(p => p.ConnectionId == playerConnectionId));
 
             if (room == null) throw new Exception("Room not found");
 
             room.Status = GameStatus.Solving;
+
             var currentPlayer = room.Players.First(p => p.ConnectionId == playerConnectionId);
             var board = currentPlayer.Board;
 
@@ -74,12 +76,13 @@ namespace SoClover.Server.Services
                 if (bs.GameRoomCard == null) throw new Exception("GameRoomCard not found");
                 bs.GameRoomCard.Location = CardLocation.InHand;
                 bs.TargetGameRoomCard = bs.GameRoomCard;
-                bs.TargetRotation = bs.GameRoomCard?.CurrentRotation;
+                bs.TargetRotation = bs.GameRoomCard.CurrentRotation;
                 bs.GameRoomCard = null;
             }
 
             var twoAdditionalCards = await _context.GameRoomCards
                 .Where(grc => grc.GameRoomId == room.Id && grc.Location == CardLocation.InDeck)
+                .OrderBy(x => Guid.NewGuid())
                 .Take(2)
                 .ToListAsync();
 
@@ -92,7 +95,7 @@ namespace SoClover.Server.Services
             return room;
         }
 
-        public async Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId)
+        public async Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId, bool includingHand = false)
         {
             var dict = new Dictionary<Player, BoardDataDTO>();
 
@@ -105,6 +108,7 @@ namespace SoClover.Server.Services
                 .ThenInclude(grc => grc.Card)
                 .Include(r => r.GameRoomCards)
                 .ThenInclude(grc => grc.Card)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(r => r.Id == roomId);
 
             if(room == null) throw new Exception($"Room {roomId} not found");
@@ -119,7 +123,7 @@ namespace SoClover.Server.Services
 
                 dict = players.ToDictionary(
                     p => p,
-                    p => new BoardDataDTO(checkedPlayer.Board, p.Id == checkedPlayer.Id)
+                    p => new BoardDataDTO(checkedPlayer.Board, p.Id == checkedPlayer.Id, includingHand)
                 );
                 return dict;
             }
