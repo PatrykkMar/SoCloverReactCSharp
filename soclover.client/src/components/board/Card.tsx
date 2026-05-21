@@ -32,14 +32,16 @@ export default function Card({ slot }: Props) {
                     <div className={styles.wordBottom}>{slot.wordBottom}</div>
                     <div className={styles.wordLeft}>{slot.wordLeft}</div>
 
-                    <button
-                        className={styles.rotateBtn}
-                        onClick={handleRotateClick}
-                        style={{ transform: `translate(-50%, -50%)` }}
-                        title="Rotate card"
-                    >
-                        ↻
-                    </button>
+                    {boardContext?.board?.cardsActive && (
+                        <button
+                            className={styles.rotateBtn}
+                            onClick={handleRotateClick}
+                            style={{ transform: `translate(-50%, -50%)` }}
+                            title="Rotate card"
+                        >
+                            ↻
+                        </button>
+                    )}
                 </div>
             ) : (
                 <div className={styles.emptySlot}>Empty</div>

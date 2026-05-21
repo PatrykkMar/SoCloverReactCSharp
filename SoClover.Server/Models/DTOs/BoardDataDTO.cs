@@ -2,7 +2,7 @@
 {
     public class BoardDataDTO
     {
-        public BoardDataDTO(Board board, bool isActive = true, bool includingHand = false) 
+        public BoardDataDTO(Board board, bool isChecked = true) 
         {
             var room = board.Player.GameRoom;
             if(room.Status == GameStatus.Writing)
@@ -16,8 +16,10 @@
                     WordLeft = bs.GameRoomCard?.Card.WordLeft ?? string.Empty,
                     CurrentRotation = bs.GameRoomCard?.CurrentRotation ?? 0,
                     PositionIndex = bs.PositionIndex,
-                    Location = CardLocation.OnBoard.ToString()
+                    Location = CardLocation.OnBoard.ToString(),
                 }).ToArray();
+                InputsActive = true;
+                CardsActive = false;
             }
             else if(room.Status == GameStatus.Solving)
             {
@@ -32,6 +34,8 @@
                     PositionIndex = board.BoardSlots.FirstOrDefault(bs => bs.GameRoomCardId == grc.Id)?.PositionIndex,
                     Location = grc.Location.ToString()
                 }).OrderBy(grc => grc.GameRoomCardId).ToArray();
+                InputsActive = false;
+                CardsActive = !isChecked;
             }
             else
             {
@@ -41,7 +45,6 @@
             RightClue = board.RightClue;
             BottomClue = board.BottomClue;
             LeftClue = board.LeftClue;
-            InputsActive = isActive;
         }
 
         public CardDTO[] Cards { get; set; } = [];
@@ -50,6 +53,7 @@
         public string? BottomClue { get; set; } 
         public string? LeftClue { get; set; }
         public bool InputsActive { get; set; } = false;
+        public bool CardsActive { get; set; } = false;
     }
 
     public class CardDTO
