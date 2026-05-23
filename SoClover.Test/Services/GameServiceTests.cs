@@ -161,7 +161,7 @@ namespace SoClover.Tests.Services
             await _context.SaveChangesAsync();
 
             // Act
-            var result = await _service.CreateBoardDTOsForPlayersInRoom(room.Id);
+            var result = await _service.CreateBoardDTOsForPlayersInRoomAsync(room.Id);
 
             // Assert
             result.Should().HaveCount(2);
@@ -184,7 +184,7 @@ namespace SoClover.Tests.Services
             await _context.SaveChangesAsync();
 
             // Act
-            var result = await _service.CreateBoardDTOsForPlayersInRoom(room.Id);
+            var result = await _service.CreateBoardDTOsForPlayersInRoomAsync(room.Id);
 
             // Assert
             result.Should().HaveCount(2);
@@ -208,7 +208,7 @@ namespace SoClover.Tests.Services
             await _context.SaveChangesAsync();
 
             // Act
-            var resultRoom = await _service.RotateCard(card.Id);
+            var resultRoom = await _service.RotateCardAsync(card.Id);
 
             // Assert
             card.CurrentRotation.Should().Be(0);

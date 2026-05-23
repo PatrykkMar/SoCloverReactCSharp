@@ -37,10 +37,12 @@
                     WordLeft = grc.Card.WordLeft,
                     CurrentRotation = grc.CurrentRotation,
                     PositionIndex = board.BoardSlots.FirstOrDefault(bs => bs.GameRoomCardId == grc.Id)?.PositionIndex,
-                    Location = grc.Location.ToString()
+                    Location = grc.Location.ToString(),
+                    IsCorrect = grc.BoardSlot?.IsCorrect ?? false
                 }).OrderBy(grc => grc.GameRoomCardId).ToArray();
                 InputsActive = false;
                 CardsActive = !isChecked;
+                IsChecked = isChecked;
             }
             else
             {
@@ -59,6 +61,7 @@
         public string? LeftClue { get; set; }
         public bool InputsActive { get; set; } = false;
         public bool CardsActive { get; set; } = false;
+        public bool IsChecked { get; set; } = false;
     }
 
     public class CardDTO
@@ -71,5 +74,6 @@
         public int CurrentRotation { get; set; } = 0;
         public int? PositionIndex { get; set; } = null;
         public string Location { get; set; } = string.Empty;
+        public bool IsCorrect { get; set; } = false;
     }
 }

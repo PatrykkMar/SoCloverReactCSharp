@@ -41,7 +41,7 @@ export default function Board() {
         return <div>Room loading...</div>;
 
 
-    const { board, submitClues } = boardContext;
+    const { board, submitClues, check } = boardContext;
 
     const slotIndexes = [0, 1, 2, 3];
     const handCards = board.cards.filter(card => card.location === "InHand");
@@ -61,6 +61,16 @@ export default function Board() {
 
         const request: SubmitCluesRequest = { words };
         submitClues(request);
+    };
+
+    const handleCheck = () => {
+        const cardsOnBoard = board.cards.filter(card => card.location === "OnBoard");
+
+        if (cardsOnBoard.length < 4) {
+            alert("Place all cards on the board before checking!");
+            return;
+        }
+        check();
     };
 
     return (
@@ -124,8 +134,14 @@ export default function Board() {
                     Submit clues
                 </button>
             )}
-            {roomContext.status === GameStatus.Solving && (
-                <Hand cards={handCards} />
+            {roomContext.status === GameStatus.Solving &&  (
+                <>
+                    <Hand cards={handCards} />
+                    {!boardContext.board.isChecked && (
+                    <button className="btn btn-primary mt-3" onClick={handleCheck}>
+                        Check
+                    </button>)}
+                </>
             )}
         </div>
     );

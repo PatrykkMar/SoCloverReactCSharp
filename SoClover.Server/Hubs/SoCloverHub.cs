@@ -74,7 +74,7 @@ namespace SoClover.Server.Hubs
 
         public async Task RotateCard(RotateCardRequest request)
         {
-            var room = await _gameService.RotateCard(request.GameRoomCardId);
+            var room = await _gameService.RotateCardAsync(request.GameRoomCardId);
             await SendBoards(room.Id);
         }
 
@@ -85,9 +85,16 @@ namespace SoClover.Server.Hubs
             await SendBoards(room.Id);
         }
 
+        public async Task Check()
+        {
+            string connectionId = Context.ConnectionId;
+            var room = await _gameService.CheckAsync(connectionId);
+            await SendBoards(room.Id);
+        }
+
         public async Task SendBoards(int roomId)
         {
-            var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(roomId);
+            var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoomAsync(roomId);
 
             foreach (var entry in playerBoards)
             {

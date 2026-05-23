@@ -1,4 +1,4 @@
-import type { CardDTO } from "../../models/dtos";
+﻿import type { CardDTO } from "../../models/dtos";
 import Card from "./Card";
 import styles from "./boardslot.module.css";
 import { useContext } from "react";

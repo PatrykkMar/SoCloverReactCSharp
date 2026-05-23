@@ -27,25 +27,34 @@ export default function Card({ card }: CardProps) {
     return (
         <div
             className={styles.slot}
-            draggable={boardContext?.board?.cardsActive}
+            draggable={boardContext?.board?.cardsActive && !card.isCorrect}
             onDragStart={handleDragStart}
         >
             {card ? (
-                <div className={styles.card} style={{ transform: `rotate(${rotationDegrees}deg)` }}>
+                <div
+                    className={`${styles.card} ${card.isCorrect ? styles.correctCard : ""}`}
+                    style={{ transform: `rotate(${rotationDegrees}deg)` }}
+                >
                     <div className={styles.wordTop}>{card.wordTop}</div>
                     <div className={styles.wordRight}>{card.wordRight}</div>
                     <div className={styles.wordBottom}>{card.wordBottom}</div>
                     <div className={styles.wordLeft}>{card.wordLeft}</div>
 
-                    {boardContext?.board?.cardsActive && (
-                        <button
-                            className={styles.rotateBtn}
-                            onClick={handleRotateClick}
-                            style={{ transform: `translate(-50%, -50%)` }}
-                            title="Rotate card"
-                        >
-                            ↻
-                        </button>
+                    {card.isCorrect ? (
+                        <div>
+                            {/*TODO: Some icon*/ }
+                        </div>
+                    ) : (
+                        boardContext?.board?.cardsActive && (
+                            <button
+                                className={styles.rotateBtn}
+                                onClick={handleRotateClick}
+                                style={{ transform: `translate(-50%, -50%)` }}
+                                title="Rotate card"
+                            >
+                                ↻
+                            </button>
+                        )
                     )}
                 </div>
             ) : (

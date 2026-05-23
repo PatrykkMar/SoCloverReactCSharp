@@ -84,3 +84,9 @@
     position: relative;
     overflow: hidden;
 }
+
+.correctCard {
+    border: 2px solid #27ae60 !important;
+    background-color: #2ecc71 !important;
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.5);
+}

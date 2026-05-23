@@ -8,6 +8,7 @@ export interface BoardContextType {
     submitClues: (request: SubmitCluesRequest) => Promise<void>;
     rotateCard: (request: RotateCardRequest) => Promise<void>;
     moveCardToSlot: (request: MoveCardRequest) => Promise<void>;
+    check: () => Promise<void>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -51,8 +52,13 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
         await con.invoke("MoveCardToSlot", request);
     };
 
+    const check = async () => {
+        if (!con) return;
+        await con.invoke("Check");
+    };
+
     return (
-        <BoardContext.Provider value={{ board, submitClues, rotateCard, moveCardToSlot }}>
+        <BoardContext.Provider value={{ board, submitClues, rotateCard, moveCardToSlot, check }}>
             {children}
         </BoardContext.Provider>
     );
