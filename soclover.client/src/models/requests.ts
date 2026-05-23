@@ -16,3 +16,8 @@ export interface SubmitCluesRequest {
 export interface RotateCardRequest {
     gameRoomCardId: number;
 }
+
+export interface MoveCardRequest {
+    gameRoomCardId: number;
+    positionIndex: number;
+}

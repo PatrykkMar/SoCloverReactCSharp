@@ -121,5 +121,25 @@ namespace SoClover.Server.Hubs
             }
         }
 
+        public async Task MoveCardToSlot(MoveCardRequest request)
+        {
+            string connectionId = Context.ConnectionId;
+
+            var room = await _gameService.MoveCardToSlotAsync(connectionId, request.GameRoomCardId, request.PositionIndex);
+
+            var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(room.Id);
+
+            foreach (var entry in playerBoards)
+            {
+                var player = entry.Key;
+                var boardDto = entry.Value;
+
+                if (!string.IsNullOrEmpty(player.ConnectionId))
+                {
+                    await Clients.Client(player.ConnectionId).SendAsync("BoardUpdated", boardDto);
+                }
+            }
+        }
+
     }
 }

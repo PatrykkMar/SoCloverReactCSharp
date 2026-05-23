@@ -64,11 +64,26 @@
 .card {
     width: 100%;
     height: 100%;
-    background-color: white;
-    border: 1px solid #000;
+    background-color: #ffffff;
+    border: 2px solid #333;
+    border-radius: 12px;
     position: relative;
-    font-size: 14px;
-    font-weight: bold;
+    cursor: grab; /* Kursor r¹czki gotowej do chwycenia */
+    user-select: none;
+    touch-action: none;
+    transition: transform 0.2s ease; /* P³ynny powrót/obrót */
+}
+
+    .card:active {
+        cursor: grabbing; /* Kursor zaciœniêtej piêœci podczas trzymania */
+    }
+
+/* Style aplikowane TYLKO w trakcie fizycznego przeci¹gania */
+.dragging {
+    cursor: grabbing !important;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25); /* Efekt podniesienia karty nad planszê */
+    transition: none !important; /* Wy³¹czamy transition, by karta idealnie nad¹¿a³a za myszk¹ */
+    pointer-events: none; /* Krytyczne! Mysz musi "widzieæ" elementy POD kart¹ podczas dropu */
 }
 
 

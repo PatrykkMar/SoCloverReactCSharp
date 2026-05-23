@@ -12,6 +12,7 @@ namespace SoClover.Server.Services
         Task<GameRoom> SubmitCluesAsync(string playerConnectionId, string[] words);
         Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId);
         Task<GameRoom> RotateCard(int gameRoomCardId);
+        Task<GameRoom> MoveCardToSlotAsync(string playerConnectionId, int gameRoomCardId, int positionIndex);
     }
 
     public class GameService(SoCloverDBContext context, ICardManager cardManager) : IGameService
@@ -144,6 +145,58 @@ namespace SoClover.Server.Services
             card.CurrentRotation = (card.CurrentRotation + 1) % 4;
             await _context.SaveChangesAsync();
             return card.GameRoom;
+        }
+
+        public async Task<GameRoom> MoveCardToSlotAsync(string playerConnectionId, int gameRoomCardId, int positionIndex)
+        {
+            // 1. Pobierz pokój wraz z graczem, jego planszą i slotami
+            var room = await _context.GameRooms
+                .Include(r => r.Players)
+                    .ThenInclude(p => p.Board)
+                        .ThenInclude(b => b.BoardSlots)
+                            .ThenInclude(bs => bs.GameRoomCard) // Krytyczne: musimy załadować kartę, która już tam leży!
+                .FirstOrDefaultAsync(r => r.Players.Any(p => p.ConnectionId == playerConnectionId));
+
+            if (room == null) throw new Exception("Room not found");
+
+            var player = room.Players.First(p => p.ConnectionId == playerConnectionId);
+            var board = player.Board ?? throw new Exception("Player board not found");
+
+            // 2. Pobierz kartę, którą gracz aktualnie przeciąga
+            var movingCard = await _context.GameRoomCards
+                .FirstOrDefaultAsync(grc => grc.Id == gameRoomCardId && grc.GameRoomId == room.Id);
+
+            if (movingCard == null) throw new Exception("Card not found");
+
+            // 3. Znajdź lub utwórz slot o wskazanym indeksie
+            var targetSlot = board.BoardSlots.FirstOrDefault(bs => bs.PositionIndex == positionIndex);
+            if (targetSlot == null)
+            {
+                targetSlot = new BoardSlot { Board = board, PositionIndex = positionIndex };
+                board.BoardSlots.Add(targetSlot);
+            }
+
+            // 4. LOGIKA PODMIANY (SWAP): Jeśli slot jest zajęty, zdejmij obecną kartę na rękę
+            if (targetSlot.GameRoomCard != null)
+            {
+                var oldCard = targetSlot.GameRoomCard;
+
+                // Zabezpieczenie przed upuszczeniem karty na ten sam slot, w którym już leży
+                if (oldCard.Id == movingCard.Id)
+                {
+                    return room;
+                }
+
+                oldCard.Location = CardLocation.InHand;
+                targetSlot.GameRoomCard = null;
+            }
+
+            // 5. Przypisz nową kartę do zwolnionego slotu
+            targetSlot.GameRoomCard = movingCard;
+            movingCard.Location = CardLocation.OnBoard;
+
+            await _context.SaveChangesAsync();
+            return room;
         }
     }
 }

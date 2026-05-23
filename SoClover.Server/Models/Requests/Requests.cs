@@ -23,4 +23,10 @@
     {
         public int GameRoomCardId { get; set; }
     }
+
+    public class MoveCardRequest
+    {
+        public int GameRoomCardId { get; set; }
+        public int PositionIndex { get; set; }
+    }
 }

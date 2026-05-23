@@ -26,3 +26,8 @@
     border-color: #888888;
     color: #666666;
 }
+
+.dragOverActive {
+    border-color: #2ecc71 !important; 
+    background-color: rgba(46, 204, 113, 0.1) !important;
+}
