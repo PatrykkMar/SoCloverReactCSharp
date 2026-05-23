@@ -23,7 +23,12 @@
             }
             else if(room.Status == GameStatus.Solving)
             {
-                Cards = room.GameRoomCards.Where(x=> (new[] { CardLocation.OnBoard, CardLocation.InHand }).Contains(x.Location)).Select(grc => new CardDTO
+                Cards = room.GameRoomCards.Where(x=> 
+                (
+                x.Location == CardLocation.InHand ||
+                (x.Location == CardLocation.OnBoard && x.BoardSlot?.Board?.IsActive == true)
+                )
+                ).Select(grc => new CardDTO
                 {
                     GameRoomCardId = grc.Id,
                     WordTop = grc.Card.WordTop,

@@ -1,36 +1,41 @@
-﻿import type { CardDTO } from "../../models/dtos";
-import type { RotateCardRequest } from "../../models/requests";
+﻿import { useContext } from "react";
+import type { CardDTO } from "../../models/dtos";
 import { BoardContext } from "../../context/BoardContext";
 import styles from "./card.module.css";
-import { useContext } from "react";
-interface Props {
-    slot: CardDTO;
+
+interface CardProps {
+    card: CardDTO;
 }
 
-export default function Card({ slot }: Props) {
-
+export default function Card({ card }: CardProps) {
     const boardContext = useContext(BoardContext);
-    const rotationDegrees = slot.currentRotation * 90;
+    const rotationDegrees = (card.currentRotation ?? 0) * 90;
 
-    const handleRotateClick = () => {
+    const handleDragStart = (e: React.DragEvent) => {
+        e.dataTransfer.setData("text/plain", card.gameRoomCardId.toString());
+        e.dataTransfer.effectAllowed = "move";
+    };
 
-        if (boardContext?.rotateCard && slot.gameRoomCardId) {
-            boardContext.rotateCard({
-                gameRoomCardId: slot.gameRoomCardId
-            } as RotateCardRequest);
+    const handleRotateClick = (e: React.MouseEvent) => {
+        console.log("Rotation");
+        e.stopPropagation();
+        if (boardContext?.rotateCard && card.gameRoomCardId) {
+            boardContext.rotateCard({ gameRoomCardId: card.gameRoomCardId });
         }
     };
 
     return (
         <div
             className={styles.slot}
+            draggable={boardContext?.board?.cardsActive}
+            onDragStart={handleDragStart}
         >
-            {slot ? (
+            {card ? (
                 <div className={styles.card} style={{ transform: `rotate(${rotationDegrees}deg)` }}>
-                    <div className={styles.wordTop}>{slot.wordTop}</div>
-                    <div className={styles.wordRight}>{slot.wordRight}</div>
-                    <div className={styles.wordBottom}>{slot.wordBottom}</div>
-                    <div className={styles.wordLeft}>{slot.wordLeft}</div>
+                    <div className={styles.wordTop}>{card.wordTop}</div>
+                    <div className={styles.wordRight}>{card.wordRight}</div>
+                    <div className={styles.wordBottom}>{card.wordBottom}</div>
+                    <div className={styles.wordLeft}>{card.wordLeft}</div>
 
                     {boardContext?.board?.cardsActive && (
                         <button
