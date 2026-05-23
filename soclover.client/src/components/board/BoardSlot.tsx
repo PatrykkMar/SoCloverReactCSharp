@@ -1,6 +1,6 @@
 import type { CardDTO } from "../../models/dtos";
 import Card from "./Card";
-import styles from "./Board.module.css";
+import styles from "./boardslot.module.css";
 
 interface BoardSlotProps {
     index: number;
@@ -8,12 +8,13 @@ interface BoardSlotProps {
 }
 
 export default function BoardSlot({ index, card }: BoardSlotProps) {
+    const hasCard = card && card.gameRoomCardId !== 0;
+
     return (
         <div
-            className={`${styles.slotContainer} ${!card ? styles.emptySlot : ""}`}
             data-position-index={index}
         >
-            {card && card.gameRoomCardId !== 0 ? (
+            {hasCard ? (
                 <Card slot={card} />
             ) : (
                 <div className={styles.slotPlaceholder}>
