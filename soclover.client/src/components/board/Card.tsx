@@ -10,6 +10,7 @@ interface CardProps {
 export default function Card({ card }: CardProps) {
     const boardContext = useContext(BoardContext);
     const rotationDegrees = (card.currentRotation ?? 0) * 90;
+    const counterRotationDegrees = -rotationDegrees;
 
     const handleDragStart = (e: React.DragEvent) => {
         e.dataTransfer.setData("text/plain", card.gameRoomCardId.toString());
@@ -49,7 +50,7 @@ export default function Card({ card }: CardProps) {
                             <button
                                 className={styles.rotateBtn}
                                 onClick={handleRotateClick}
-                                style={{ transform: `translate(-50%, -50%)` }}
+                                style={{ transform: `translate(-50%, -50%) rotate(${counterRotationDegrees}deg)` }}
                                 title="Rotate card"
                             >
                                 ↻

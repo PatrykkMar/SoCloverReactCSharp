@@ -73,12 +73,14 @@ namespace SoClover.Server.Services
                 throw new Exception("Not enough clues provided");
             }
 
+            var ran = new Random();
             foreach (var bs in board.BoardSlots)
             {
                 if (bs.GameRoomCard == null) throw new Exception("GameRoomCard not found");
                 bs.GameRoomCard.Location = CardLocation.InHand;
                 bs.TargetGameRoomCard = bs.GameRoomCard;
                 bs.TargetRotation = bs.GameRoomCard.CurrentRotation;
+                bs.GameRoomCard.CurrentRotation = ran.Next(0, 4);
                 bs.GameRoomCard = null;
             }
 
