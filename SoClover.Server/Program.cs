@@ -47,6 +47,8 @@ builder.Services.AddSignalR(options => options.AddFilter<HubErrorFilter>())
 builder.Services.AddTransient<IGameService, GameService>();
 builder.Services.AddTransient<IRoomService, RoomService>();
 
+builder.Services.AddHostedService<DatabaseCleanupService>();
+
 //Helpers
 builder.Services.AddTransient<ICardManager, CardManager>();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
