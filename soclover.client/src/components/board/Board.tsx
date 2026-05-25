@@ -41,7 +41,7 @@ export default function Board() {
         return <div>Room loading...</div>;
 
 
-    const { board, submitClues, check } = boardContext;
+    const { board, submitClues, check, returnToWriting } = boardContext;
 
     const slotIndexes = [0, 1, 2, 3];
     const handCards = board.cards.filter(card => card.location === "InHand");
@@ -72,6 +72,12 @@ export default function Board() {
         }
         check();
     };
+
+    const handleReturnToWriting = () => {
+        if (window.confirm("Are you sure you want to return to writing? This will reset the board and all clues.")) {
+            returnToWriting();
+        }
+    }
 
     return (
         <div className={styles.boardContainer}>
@@ -130,9 +136,12 @@ export default function Board() {
             </div>
 
             {roomContext?.status === GameStatus.Writing && (
-                <button className="btn btn-primary mt-3" onClick={handleSubmitClues}>
-                    Submit clues
-                </button>
+                <>
+                    <button className="btn btn-primary mt-3" onClick={handleSubmitClues}>
+                        Submit clues
+                    </button>
+
+                </>
             )}
             {roomContext.status === GameStatus.Solving &&  (
                 <>
@@ -141,6 +150,10 @@ export default function Board() {
                     <button className="btn btn-primary mt-3" onClick={handleCheck}>
                         Check
                     </button>)}
+
+                    <button className="btn btn-primary mt-3" onClick={handleReturnToWriting}>
+                        Return to writing
+                    </button>
                 </>
             )}
         </div>

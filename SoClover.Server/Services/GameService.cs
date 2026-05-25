@@ -14,6 +14,7 @@ namespace SoClover.Server.Services
         Task<GameRoom> RotateCardAsync(int gameRoomCardId);
         Task<GameRoom> MoveCardToSlotAsync(string playerConnectionId, int gameRoomCardId, int positionIndex);
         Task<GameRoom> CheckAsync(string playerConnectionId);
+        Task<GameRoom> ReturnToWritingAsync(string playerConnectionId);
     }
 
     public class GameService(SoCloverDBContext context, ICardManager cardManager) : IGameService
@@ -207,6 +208,68 @@ namespace SoClover.Server.Services
 
             await _context.SaveChangesAsync();
             return board.Player.GameRoom;
+        }
+
+        public async Task<GameRoom> ReturnToWritingAsync(string playerConnectionId)
+        {
+            var room = await _context.GameRooms
+                .Include(r => r.CheckedPlayer)
+                .Include(r => r.Players)
+                    .ThenInclude(p => p.Board)
+                        .ThenInclude(b => b!.BoardSlots)
+                            .ThenInclude(bs => bs.GameRoomCard)
+                .Include(r => r.GameRoomCards)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(r => r.Players.Any(p => p.ConnectionId == playerConnectionId));
+
+            if (room == null) throw new Exception("Room not found");
+            if (room.Status != GameStatus.Solving) throw new Exception("Can only rollback from Solving state");
+
+            var checkedPlayer = room.CheckedPlayer;
+            if (checkedPlayer == null || checkedPlayer.Board == null)
+                throw new Exception("No active checked player or board found to rollback");
+
+            var board = checkedPlayer.Board;
+
+            foreach (var slot in board.BoardSlots)
+            {
+                if (slot.GameRoomCard != null)
+                {
+                    slot.GameRoomCard.Location = CardLocation.InDeck;
+                    slot.GameRoomCard.CurrentRotation = 0;
+                    slot.GameRoomCard = null;
+                }
+
+                slot.TargetGameRoomCard = null;
+                slot.TargetGameRoomCardId = null;
+                slot.TargetRotation = 0;
+                slot.IsCorrect = false;
+            }
+
+            board.TopClue = "";
+            board.RightClue = "";
+            board.BottomClue = "";
+            board.LeftClue = "";
+            board.IsActive = false;
+
+            var cardsInHand = room.GameRoomCards.Where(grc => grc.Location == CardLocation.InHand);
+            foreach (var card in cardsInHand)
+            {
+                card.Location = CardLocation.InDeck;
+                card.CurrentRotation = 0;
+            }
+
+            foreach (var p in room.Players)
+            {
+                p.IsReady = false;
+            }
+
+            room.Status = GameStatus.Writing;
+            room.CheckedPlayer = null;
+
+            await _cardManager.AssignCardsToPlayersAsync([checkedPlayer.Id], room.Id);
+            await _context.SaveChangesAsync();
+            return room;
         }
     }
 }
