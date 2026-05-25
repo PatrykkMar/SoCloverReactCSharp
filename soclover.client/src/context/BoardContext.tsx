@@ -1,12 +1,14 @@
 import { createContext, type ReactNode, useContext, useState, useEffect } from "react";
 import type { BoardDataDTO } from "../models/dtos";
-import type { RotateCardRequest, SubmitCluesRequest} from "../models/requests";
+import type { MoveCardRequest, RotateCardRequest, SubmitCluesRequest} from "../models/requests";
 import { SocketContext } from "./SocketContext";
 
 export interface BoardContextType {
     board: BoardDataDTO | null;
     submitClues: (request: SubmitCluesRequest) => Promise<void>;
     rotateCard: (request: RotateCardRequest) => Promise<void>;
+    moveCardToSlot: (request: MoveCardRequest) => Promise<void>;
+    check: () => Promise<void>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -45,8 +47,18 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
         await con.invoke("RotateCard", request);
     };
 
+    const moveCardToSlot = async (request: MoveCardRequest) => {
+        if (!con) return;
+        await con.invoke("MoveCardToSlot", request);
+    };
+
+    const check = async () => {
+        if (!con) return;
+        await con.invoke("Check");
+    };
+
     return (
-        <BoardContext.Provider value={{ board, submitClues, rotateCard }}>
+        <BoardContext.Provider value={{ board, submitClues, rotateCard, moveCardToSlot, check }}>
             {children}
         </BoardContext.Provider>
     );

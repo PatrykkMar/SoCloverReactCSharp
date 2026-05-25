@@ -13,7 +13,7 @@ export default function Hand({ cards }: HandProps) {
             <div className={styles.cardsBelt}>
                 {cards.map((card, index) => (
                     <div key={index} className={styles.handCardWrapper}>
-                        <Card slot={card} />
+                        <Card card={card} />
                     </div>
                 ))}
                 {cards.length === 0 && (

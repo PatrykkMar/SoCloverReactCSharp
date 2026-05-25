@@ -27,6 +27,7 @@ export interface CardDTO {
     currentRotation: number;
     positionIndex: number | undefined; //position on board
     location: string;
+    isCorrect: boolean | undefined;
 }
 
 export interface BoardDataDTO {
@@ -37,4 +38,5 @@ export interface BoardDataDTO {
     leftClue: string;
     inputsActive: boolean;
     cardsActive: boolean;
+    isChecked: boolean;
 }

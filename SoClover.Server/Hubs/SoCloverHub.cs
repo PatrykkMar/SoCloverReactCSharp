@@ -58,57 +58,44 @@ namespace SoClover.Server.Hubs
         public async Task StartGame()
         {
             var room = await _gameService.StartGameAsync(Context.ConnectionId);
-
-            var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
-                room.Id
-            );
-
-
             var roomData = await _roomService.GetRoomDataAsync(room.Id);
             await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
-
-            foreach (var entry in playerBoards)
-            {
-                var player = entry.Key;
-                var boardDto = entry.Value;
-
-                if (!string.IsNullOrEmpty(player.ConnectionId))
-                {
-                    await Clients.Client(player.ConnectionId).SendAsync("BoardUpdated", boardDto);
-                }
-            }
+            await SendBoards(room.Id);
         }
 
         public async Task SubmitClues(SubmitCluesRequest request)
         {
             var room = await _gameService.SubmitCluesAsync(Context.ConnectionId, request.Words);
-            var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
-                room.Id
-            );
-
-
             var roomData = await _roomService.GetRoomDataAsync(room.Id);
             await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
-
-            foreach (var entry in playerBoards)
-            {
-                var player = entry.Key;
-                var boardDto = entry.Value;
-
-                if (!string.IsNullOrEmpty(player.ConnectionId))
-                {
-                    await Clients.Client(player.ConnectionId).SendAsync("BoardUpdated", boardDto);
-                }
-            }
+            await SendBoards(room.Id);
         }
 
 
         public async Task RotateCard(RotateCardRequest request)
         {
-            var room = await _gameService.RotateCard(request.GameRoomCardId);
-            var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoom(
-                room.Id
-            );
+            var room = await _gameService.RotateCardAsync(request.GameRoomCardId);
+            await SendBoards(room.Id);
+        }
+
+        public async Task MoveCardToSlot(MoveCardRequest request)
+        {
+            string connectionId = Context.ConnectionId;
+            var room = await _gameService.MoveCardToSlotAsync(connectionId, request.GameRoomCardId, request.PositionIndex);
+            await SendBoards(room.Id);
+        }
+
+        public async Task Check()
+        {
+            string connectionId = Context.ConnectionId;
+            var room = await _gameService.CheckAsync(connectionId);
+            await SendBoards(room.Id);
+        }
+
+        public async Task SendBoards(int roomId)
+        {
+            var playerBoards = await _gameService.CreateBoardDTOsForPlayersInRoomAsync(roomId);
+
             foreach (var entry in playerBoards)
             {
                 var player = entry.Key;
@@ -120,6 +107,5 @@ namespace SoClover.Server.Hubs
                 }
             }
         }
-
     }
 }

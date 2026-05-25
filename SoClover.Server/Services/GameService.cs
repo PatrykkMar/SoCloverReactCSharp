@@ -10,8 +10,10 @@ namespace SoClover.Server.Services
     {
         public Task<GameRoom> StartGameAsync(string roomCode);
         Task<GameRoom> SubmitCluesAsync(string playerConnectionId, string[] words);
-        Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId);
-        Task<GameRoom> RotateCard(int gameRoomCardId);
+        Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoomAsync(int roomId);
+        Task<GameRoom> RotateCardAsync(int gameRoomCardId);
+        Task<GameRoom> MoveCardToSlotAsync(string playerConnectionId, int gameRoomCardId, int positionIndex);
+        Task<GameRoom> CheckAsync(string playerConnectionId);
     }
 
     public class GameService(SoCloverDBContext context, ICardManager cardManager) : IGameService
@@ -71,12 +73,14 @@ namespace SoClover.Server.Services
                 throw new Exception("Not enough clues provided");
             }
 
+            var ran = new Random();
             foreach (var bs in board.BoardSlots)
             {
                 if (bs.GameRoomCard == null) throw new Exception("GameRoomCard not found");
                 bs.GameRoomCard.Location = CardLocation.InHand;
                 bs.TargetGameRoomCard = bs.GameRoomCard;
                 bs.TargetRotation = bs.GameRoomCard.CurrentRotation;
+                bs.GameRoomCard.CurrentRotation = ran.Next(0, 4);
                 bs.GameRoomCard = null;
             }
 
@@ -95,7 +99,7 @@ namespace SoClover.Server.Services
             return room;
         }
 
-        public async Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoom(int roomId)
+        public async Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoomAsync(int roomId)
         {
             var dict = new Dictionary<Player, BoardDataDTO>();
 
@@ -135,7 +139,7 @@ namespace SoClover.Server.Services
             return dict;
         }
 
-        public async Task<GameRoom> RotateCard(int gameRoomCardId)
+        public async Task<GameRoom> RotateCardAsync(int gameRoomCardId)
         {
             var card = await _context
                 .GameRoomCards
@@ -144,6 +148,65 @@ namespace SoClover.Server.Services
             card.CurrentRotation = (card.CurrentRotation + 1) % 4;
             await _context.SaveChangesAsync();
             return card.GameRoom;
+        }
+
+        public async Task<GameRoom> MoveCardToSlotAsync(string playerConnectionId, int gameRoomCardId, int positionIndex)
+        {
+            var room = await _context.GameRooms
+                .Include(r => r.Players)
+                .ThenInclude(p => p.Board)
+                .ThenInclude(b => b!.BoardSlots)
+                .ThenInclude(bs => bs.GameRoomCard)
+                .FirstOrDefaultAsync(r => r.Players.Any(p => p.ConnectionId == playerConnectionId));
+
+            if (room == null) throw new Exception("Connection not found");
+
+            var player = room.Players.First(p => p.ConnectionId == playerConnectionId);
+            var board = room.Players.Select(p => p.Board).FirstOrDefault(b => b!.IsActive) ?? throw new Exception("Player does not have an assigned board.");
+
+            var movingCard = await _context.GameRoomCards
+                .FirstOrDefaultAsync(grc => grc.Id == gameRoomCardId && grc.GameRoomId == room.Id);
+
+            if (movingCard == null) throw new Exception("Card does not belong to this game room.");
+
+            var targetSlot = board.BoardSlots.FirstOrDefault(bs => bs.PositionIndex == positionIndex);
+            if (targetSlot == null) throw new Exception("Board slot not found");
+            if (targetSlot.IsCorrect) throw new Exception("Target slot is correct, therefore it can't be moved");
+
+            if (targetSlot.GameRoomCard != null)
+            {
+                var oldCard = targetSlot.GameRoomCard;
+
+                if (oldCard.Id == movingCard.Id) return room;
+
+                oldCard.Location = CardLocation.InHand;
+                targetSlot.GameRoomCard = null;
+            }
+
+            targetSlot.GameRoomCard = movingCard;
+            movingCard.Location = CardLocation.OnBoard;
+
+            await _context.SaveChangesAsync();
+            return room;
+        }
+        public async Task<GameRoom> CheckAsync(string playerConnectionId)
+        {
+            var board = _context.Boards
+                .Include(b => b.Player)
+                .ThenInclude(p => p.GameRoom)
+                .ThenInclude(gr => gr.Players)
+                .Include(b => b.BoardSlots)
+                .ThenInclude(bs => bs.GameRoomCard)
+                .FirstOrDefault(x => x.IsActive && x.Player.GameRoom.Players.Any(x=>x.ConnectionId == playerConnectionId)) ?? throw new Exception("Active board for player not found");
+
+            foreach(var slot in board.BoardSlots)
+            {
+                if(slot.GameRoomCard == null) throw new Exception("Not all slots are filled");
+                slot.IsCorrect = slot.TargetGameRoomCardId == slot.GameRoomCard.Id && slot.TargetRotation == slot.GameRoomCard.CurrentRotation;
+            }
+
+            await _context.SaveChangesAsync();
+            return board.Player.GameRoom;
         }
     }
 }
