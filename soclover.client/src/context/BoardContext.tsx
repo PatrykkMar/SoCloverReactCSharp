@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext, useState, useEffect } from "react";
 import type { BoardDataDTO } from "../models/dtos";
-import type { MoveCardRequest, RotateCardRequest, SubmitCluesRequest} from "../models/requests";
+import type { MoveCardRequest, RotateCardRequest, SubmitCluesRequest } from "../models/requests";
 import { SocketContext } from "./SocketContext";
 
 export interface BoardContextType {
@@ -18,49 +18,73 @@ export const BoardContext = createContext<BoardContextType | undefined>(undefine
 export const BoardProvider = ({ children }: { children: ReactNode }) => {
     const socketCont = useContext(SocketContext);
 
-    const con = socketCont?.connection;
-    const isConnected = socketCont?.isConnected;
+    if (!socketCont)
+        throw new Error("BoardProvider must be used within a SocketProvider");
 
     const [board, setBoard] = useState<BoardDataDTO | null>(null);
 
     useEffect(() => {
-        if (!isConnected || !con) return;
+        const emitter = socketCont.eventsRef.current;
+        if (!emitter) return;
 
-        const handleBoardUpdated = (data: BoardDataDTO) => {
-            console.log("New board:", data);
+        const handleBoardUpdated = (event: Event) => {
+            const customEvent = event as CustomEvent<BoardDataDTO>;
+            const data = customEvent.detail;
+
+            console.log("New board received from event bus:", data);
             setBoard(data);
         };
 
-        con.on("BoardUpdated", handleBoardUpdated);
+        emitter.addEventListener("BoardUpdated", handleBoardUpdated);
 
         return () => {
-            con.off("BoardUpdated", handleBoardUpdated);
+            emitter.removeEventListener("BoardUpdated", handleBoardUpdated);
         };
-    }, [isConnected, con]);
+    }, [socketCont.eventsRef]);
 
     const submitClues = async (request: SubmitCluesRequest) => {
-        if (!con) return;
-        await con.invoke("SubmitClues", request);
+        const activeConnection = socketCont.connectionRef.current;
+        if (!activeConnection) {
+            console.error("Cannot invoke 'SubmitClues': SignalR connection is not established.");
+            return;
+        }
+        await activeConnection.invoke("SubmitClues", request);
     };
 
     const rotateCard = async (request: RotateCardRequest) => {
-        if (!con) return;
-        await con.invoke("RotateCard", request);
+        const activeConnection = socketCont.connectionRef.current;
+        if (!activeConnection) {
+            console.error("Cannot invoke 'RotateCard': SignalR connection is not established.");
+            return;
+        }
+        await activeConnection.invoke("RotateCard", request);
     };
 
     const moveCardToSlot = async (request: MoveCardRequest) => {
-        if (!con) return;
-        await con.invoke("MoveCardToSlot", request);
+        const activeConnection = socketCont.connectionRef.current;
+        if (!activeConnection) {
+            console.error("Cannot invoke 'MoveCardToSlot': SignalR connection is not established.");
+            return;
+        }
+        await activeConnection.invoke("MoveCardToSlot", request);
     };
 
     const check = async () => {
-        if (!con) return;
-        await con.invoke("Check");
+        const activeConnection = socketCont.connectionRef.current;
+        if (!activeConnection) {
+            console.error("Cannot invoke 'Check': SignalR connection is not established.");
+            return;
+        }
+        await activeConnection.invoke("Check");
     };
 
     const returnToWriting = async () => {
-        if (!con) return;
-        await con.invoke("ReturnToWriting");
+        const activeConnection = socketCont.connectionRef.current;
+        if (!activeConnection) {
+            console.error("Cannot invoke 'ReturnToWriting': SignalR connection is not established.");
+            return;
+        }
+        await activeConnection.invoke("ReturnToWriting");
     };
 
     return (
