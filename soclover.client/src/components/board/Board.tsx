@@ -18,21 +18,24 @@ export default function Board() {
         left: ""
     });
 
-
     useEffect(() => {
-        if (boardContext?.board) {
+        if (boardContext?.board && roomContext?.status) {
+            const isWritingPhase = roomContext.status === GameStatus.Writing;
+
+            const savedCluesStr = sessionStorage.getItem(`clues_backup`);
+            const savedClues = savedCluesStr ? JSON.parse(savedCluesStr) : null;
+
             const setCluesAsync = async () => {
                 setClues({
-                    top: boardContext?.board?.topClue || "",
-                    right: boardContext?.board?.rightClue || "",
-                    bottom: boardContext?.board?.bottomClue || "",
-                    left: boardContext?.board?.leftClue || ""
+	                top: boardContext?.board?.topClue || (isWritingPhase && savedClues?.top) || "",
+	                right: boardContext?.board?.rightClue || (isWritingPhase && savedClues?.right) || "",
+	                bottom: boardContext?.board?.bottomClue || (isWritingPhase && savedClues?.bottom) || "",
+	                left: boardContext?.board?.leftClue || (isWritingPhase && savedClues?.left) || ""
                 })
             };
             setCluesAsync();
         }
-    }, [boardContext?.board]);
-
+    }, [boardContext?.board, roomContext?.status]);
 
     if (!boardContext || !boardContext.board)
         return <div>Board loading...</div>;
@@ -40,15 +43,19 @@ export default function Board() {
     if (!roomContext)
         return <div>Room loading...</div>;
 
-
-    const { board, submitClues, check } = boardContext;
+    const { board, submitClues, check, returnToWriting } = boardContext;
 
     const slotIndexes = [0, 1, 2, 3];
     const handCards = board.cards.filter(card => card.location === "InHand");
 
     const handleInputChange = (direction: keyof typeof clues, value: string) => {
         if (!board.inputsActive) return;
-        setClues(prev => ({ ...prev, [direction]: value }));
+
+        setClues(prev => {
+            const updated = { ...prev, [direction]: value };
+            sessionStorage.setItem(`clues_backup`, JSON.stringify(updated));
+            return updated;
+        });
     };
 
     const handleSubmitClues = () => {
@@ -61,6 +68,7 @@ export default function Board() {
 
         const request: SubmitCluesRequest = { words };
         submitClues(request);
+        sessionStorage.removeItem(`clues_backup`);
     };
 
     const handleCheck = () => {
@@ -71,6 +79,12 @@ export default function Board() {
             return;
         }
         check();
+    };
+
+    const handleReturnToWriting = () => {
+        if (window.confirm("Are you sure you want to return to writing? This will reset the board and all clues.")) {
+            returnToWriting();
+        }
     };
 
     return (
@@ -134,13 +148,18 @@ export default function Board() {
                     Submit clues
                 </button>
             )}
-            {roomContext.status === GameStatus.Solving &&  (
+            {roomContext.status === GameStatus.Solving && (
                 <>
                     <Hand cards={handCards} />
                     {!boardContext.board.isChecked && (
-                    <button className="btn btn-primary mt-3" onClick={handleCheck}>
-                        Check
-                    </button>)}
+                        <button className="btn btn-primary mt-3" onClick={handleCheck}>
+                            Check
+                        </button>
+                    )}
+
+                    <button className="btn btn-primary mt-3" onClick={handleReturnToWriting}>
+                        Return to writing
+                    </button>
                 </>
             )}
         </div>

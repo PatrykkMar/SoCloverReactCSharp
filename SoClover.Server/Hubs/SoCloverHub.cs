@@ -71,6 +71,14 @@ namespace SoClover.Server.Hubs
             await SendBoards(room.Id);
         }
 
+        public async Task ReturnToWriting()
+        {
+            var room = await _gameService.ReturnToWritingAsync(Context.ConnectionId);
+            var roomData = await _roomService.GetRoomDataAsync(room.Id);
+            await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
+            await SendBoards(room.Id);
+        }
+
 
         public async Task RotateCard(RotateCardRequest request)
         {
