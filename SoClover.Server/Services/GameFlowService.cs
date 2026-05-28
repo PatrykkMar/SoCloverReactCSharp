@@ -71,14 +71,7 @@ namespace SoClover.Server.Services
                 bs.GameRoomCard = null;
             }
 
-            var twoAdditionalCards = await _context.GameRoomCards
-                .Where(grc => grc.GameRoomId == room.Id && grc.Location == CardLocation.InDeck)
-                .OrderBy(x => Guid.NewGuid())
-                .Take(2)
-                .ToListAsync();
-
-            foreach (var grc in twoAdditionalCards)
-                grc.Location = CardLocation.InHand;
+            await _cardManager.DrawBonusCardsAsync(room.Id, count: 2);
 
             currentPlayer.IsReady = true;
 
@@ -104,35 +97,15 @@ namespace SoClover.Server.Services
             var checkedPlayer = room.CheckedPlayer;
             if (checkedPlayer?.Board == null) throw new Exception("No active checked player or board found to rollback");
 
+            await _cardManager.ReleasePlayerCardsToDeckAsync(room.Id, checkedPlayer.Id);
+
             var board = checkedPlayer.Board;
-
-            foreach (var slot in board.BoardSlots)
-            {
-                if (slot.GameRoomCard != null)
-                {
-                    slot.GameRoomCard.Location = CardLocation.InDeck;
-                    slot.GameRoomCard.CurrentRotation = 0;
-                    slot.GameRoomCard = null;
-                }
-
-                slot.TargetGameRoomCard = null;
-                slot.TargetGameRoomCardId = null;
-                slot.TargetRotation = 0;
-                slot.IsCorrect = false;
-            }
 
             board.TopClue = "";
             board.RightClue = "";
             board.BottomClue = "";
             board.LeftClue = "";
             board.IsActive = false;
-
-            var cardsInHand = room.GameRoomCards.Where(grc => grc.Location == CardLocation.InHand);
-            foreach (var card in cardsInHand)
-            {
-                card.Location = CardLocation.InDeck;
-                card.CurrentRotation = 0;
-            }
 
             foreach (var p in room.Players) p.IsReady = false;
 

@@ -14,11 +14,11 @@ namespace SoClover.Server.Services
         Task<RoomDataDTO> GetRoomDataAsync(int roomId);
     }
 
-    public class RoomService(SoCloverDBContext context) : IRoomService
+    public class RoomService(SoCloverDBContext context, ICardManager cardManager) : IRoomService
     {
         private readonly SoCloverDBContext _context = context;
+        private readonly ICardManager _cardManager = cardManager;
         private static readonly Random _random = new();
-        public const int CARDS_NEEDED_FOR_ROOM = 40;
 
         public async Task<GameRoom> CreateRoomAsync()
         {
@@ -27,24 +27,8 @@ namespace SoClover.Server.Services
                 RoomCode = GenerateRoomCode(),
                 Status = GameStatus.Lobby
             };
-
-
-            var randomCard = await _context.Cards
-                .OrderBy(c => Guid.NewGuid())
-                .Take(CARDS_NEEDED_FOR_ROOM)
-                .ToListAsync();
-
-            var deck = randomCard.Select(card => new GameRoomCard
-            {
-                Card = card,
-                GameRoom = room,
-                Location = CardLocation.InDeck,
-                CurrentRotation = 0
-            }).ToList();
-
-            room.GameRoomCards = deck;
-
             _context.GameRooms.Add(room);
+            await _cardManager.CreateDeckForRoomAsync(room);
             await _context.SaveChangesAsync();
             return room;
         }
@@ -99,20 +83,14 @@ namespace SoClover.Server.Services
             bool anyLeft = room.Players.Any(p => p.Id != player.Id);
 
             if (!anyLeft)
-            {
                 _context.GameRooms.Remove(room);
-            }
             else
-            {
                 _context.Players.Remove(player);
-            }
 
             await _context.SaveChangesAsync();
 
             if (!anyLeft)
-            {
                 return null;
-            }
 
             return await GetRoomDataAsync(roomId);
         }
