@@ -17,7 +17,23 @@ namespace SoClover.Server.Services
             _logger = logger;
         }
 
-        public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        public async Task StartAsync(CancellationToken cancellationToken) 
+        {
+            _logger.LogInformation("Application is shutting down. Running database cleanup procedure...");
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<SoCloverDBContext>();
+                await context.Database.ExecuteSqlRawAsync("EXEC deleteDatas", cancellationToken);
+
+                _logger.LogInformation("Database cleanup procedure 'deleteDatas' executed successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while executing the database cleanup procedure.");
+            }
+        }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {

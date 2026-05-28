@@ -16,54 +16,61 @@ export interface RoomContextType {
 // eslint-disable-next-line react-refresh/only-export-components
 export const RoomContext = createContext<RoomContextType | undefined>(undefined);
 
-
 export const RoomProvider = ({ children }: { children: ReactNode }) => {
     const socketCont = useContext(SocketContext);
 
     if (!socketCont)
         throw new Error("RoomProvider must be used within a SocketProvider");
 
-    const con = socketCont.connection;
-
     const [roomCode, setRoomCode] = useState<string | null>(null);
     const [status, setStatus] = useState<string>(GameStatus.Lobby);
     const [players, setPlayers] = useState<string[]>([]);
 
     useEffect(() => {
-        if (!socketCont.isConnected || !con) return;
+        const emitter = socketCont.eventsRef.current;
+        if (!emitter) return;
 
-        const handleRoomUpdated = (data: RoomDataDTO) => {
+        const handleRoomUpdated = (event: Event) => {
+            const customEvent = event as CustomEvent<RoomDataDTO>;
+            const data = customEvent.detail;
+
             setRoomCode(data.roomCode);
             setPlayers(data.players);
             setStatus(data.status);
         };
 
-        const handlePlayerLeft = (name: string) => {
-            setPlayers(prev => prev.filter(p => p !== name));
-        };
-
-        con.on("RoomUpdated", handleRoomUpdated);
-        con.on("PlayerLeft", handlePlayerLeft);
+        emitter.addEventListener("RoomUpdated", handleRoomUpdated);
 
         return () => {
-            con.off("RoomUpdated", handleRoomUpdated);
-            con.off("PlayerLeft", handlePlayerLeft);
+            emitter.removeEventListener("RoomUpdated", handleRoomUpdated);
         };
-    }, [socketCont.isConnected, con]);
+    }, [socketCont.eventsRef]);
 
     const createRoom = async (request: CreateRoomRequest) => {
-        if (!con) return;
-        await con.invoke("CreateRoom", request);
+        const activeConnection = socketCont.connectionRef.current;
+        if (!activeConnection) {
+            console.error("Cannot invoke 'CreateRoom': SignalR connection is not established.");
+            return;
+        }
+        await activeConnection.invoke("CreateRoom", request);
     };
 
     const joinRoom = async (request: JoinRoomRequest) => {
-        if (!con) return;
-        await con.invoke("JoinRoom", request);
+        const activeConnection = socketCont.connectionRef.current;
+        if (!activeConnection) {
+            console.error("Cannot invoke 'JoinRoom': SignalR connection is not established.");
+            return;
+        }
+        await activeConnection.invoke("JoinRoom", request);
     };
 
     const startGame = async () => {
-        if (!con) return;
-        await con.invoke("StartGame");
+        const activeConnection = socketCont.connectionRef.current;
+        if (!activeConnection) {
+            console.error("Cannot invoke 'StartGame': SignalR connection is not established.");
+            return;
+        }
+        await activeConnection.invoke("StartGame");
     };
 
     return (
