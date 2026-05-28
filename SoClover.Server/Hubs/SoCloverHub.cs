@@ -75,24 +75,21 @@ namespace SoClover.Server.Hubs
         public async Task StartGame()
         {
             var room = await _gameFlowService.StartGameAsync(PlayerGuid);
-            var roomData = await _roomService.GetRoomDataAsync(room.Id);
-            await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
+            await SendRoomData(room.Id);
             await SendBoards(room.Id);
         }
 
         public async Task SubmitClues(SubmitCluesRequest request)
         {
             var room = await _gameFlowService.SubmitCluesAsync(PlayerGuid, request.Words);
-            var roomData = await _roomService.GetRoomDataAsync(room.Id);
-            await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
+            await SendRoomData(room.Id);
             await SendBoards(room.Id);
         }
 
         public async Task ReturnToWriting()
         {
             var room = await _gameFlowService.ReturnToWritingAsync(PlayerGuid);
-            var roomData = await _roomService.GetRoomDataAsync(room.Id);
-            await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
+            await SendRoomData(room.Id);
             await SendBoards(room.Id);
         }
 
@@ -113,6 +110,7 @@ namespace SoClover.Server.Hubs
         public async Task Check()
         {
             var room = await _boardService.CheckAsync(PlayerGuid);
+            await SendRoomData(room.Id);
             await SendBoards(room.Id);
         }
 
@@ -126,6 +124,12 @@ namespace SoClover.Server.Hubs
                 var boardDto = entry.Value;
                 await Clients.User(player.PlayerGuid.ToString()).SendAsync("BoardUpdated", boardDto);
             }
+        }
+
+        public async Task SendRoomData(int roomId)
+        {
+            var roomData = await _roomService.GetRoomDataAsync(roomId);
+            await Clients.Group(roomData.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
         }
     }
 }

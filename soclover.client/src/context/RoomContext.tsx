@@ -8,6 +8,7 @@ export interface RoomContextType {
     roomCode: string | null;
     players: string[];
     status: string;
+    numberOfAttempts: number;
     createRoom: (request: CreateRoomRequest) => Promise<void>;
     joinRoom: (request: JoinRoomRequest) => Promise<void>;
     startGame: () => Promise<void>;
@@ -25,6 +26,7 @@ export const RoomProvider = ({ children }: { children: ReactNode }) => {
     const [roomCode, setRoomCode] = useState<string | null>(null);
     const [status, setStatus] = useState<string>(GameStatus.Lobby);
     const [players, setPlayers] = useState<string[]>([]);
+    const [numberOfAttempts, setNumberOfAttempts] = useState<number>(0);
 
     useEffect(() => {
         const emitter = socketCont.eventsRef.current;
@@ -37,6 +39,7 @@ export const RoomProvider = ({ children }: { children: ReactNode }) => {
             setRoomCode(data.roomCode);
             setPlayers(data.players);
             setStatus(data.status);
+            setNumberOfAttempts(data.numberOfAttempts);
         };
 
         emitter.addEventListener("RoomUpdated", handleRoomUpdated);
@@ -74,7 +77,7 @@ export const RoomProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <RoomContext.Provider value={{ roomCode, players, status, createRoom, joinRoom, startGame }}>
+        <RoomContext.Provider value={{ roomCode, players, status, numberOfAttempts, createRoom, joinRoom, startGame }}>
             {children}
         </RoomContext.Provider>
     );

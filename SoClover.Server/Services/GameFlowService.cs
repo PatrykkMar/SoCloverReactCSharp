@@ -51,6 +51,7 @@ namespace SoClover.Server.Services
             var board = currentPlayer.Board ?? throw new Exception("Player board not found");
 
             board.IsActive = true;
+            room.NumberOfAttempts = 0;
             room.CheckedPlayer = currentPlayer;
 
             if (words.Length < 4) throw new Exception("Not enough clues provided");

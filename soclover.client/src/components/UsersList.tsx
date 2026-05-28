@@ -1,5 +1,6 @@
 import { useContext} from "react";
 import { RoomContext } from "../context/RoomContext";
+import { GameStatus } from "../models/dtos";
 
 
 export default function UsersList() {
@@ -9,6 +10,9 @@ export default function UsersList() {
         <div className="mt-2">
             <h5 className="mb-3">Players ({room?.players.length}/6)</h5>
             <h5>State: {room?.status}</h5>
+            {
+                room?.status === GameStatus.Solving && <h6>Number of attempts: {room?.numberOfAttempts}</h6>
+            }
             <ul className="list-group">
                 {room?.players.map((nick, i) => (
                     <li key={i} className="list-group-item d-flex align-items-center">

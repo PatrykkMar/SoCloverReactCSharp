@@ -110,6 +110,8 @@ namespace SoClover.Server.Services
                 .FirstOrDefaultAsync(x => x.IsActive && x.Player.GameRoom.Players.Any(p => p.PlayerGuid == playerGuid))
                 ?? throw new Exception("Active board for player not found");
 
+            board.Player.GameRoom.NumberOfAttempts++;
+
             foreach (var slot in board.BoardSlots)
             {
                 if (slot.GameRoomCard == null) throw new Exception("Not all slots are filled");
