@@ -16,6 +16,7 @@ export interface RoomDataDTO {
     roomCode: string;
     players: string[];
     status: string;
+    numberOfAttempts: number;
 }
 
 export interface CardDTO {

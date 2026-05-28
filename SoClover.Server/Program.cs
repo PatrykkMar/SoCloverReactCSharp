@@ -49,7 +49,8 @@ builder.Services.AddSignalR(options => options.AddFilter<HubErrorFilter>())
     });
 
 // Register application services
-builder.Services.AddTransient<IGameService, GameService>();
+builder.Services.AddTransient<IGameFlowService, GameFlowService>();
+builder.Services.AddTransient<IBoardService, BoardService>();
 builder.Services.AddTransient<IRoomService, RoomService>();
 
 builder.Services.AddHostedService<DatabaseCleanupService>();

@@ -1,26 +1,28 @@
 ﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using SoClover.Server.Context;
+using SoClover.Server.Helpers;
 using SoClover.Server.Models;
 using SoClover.Server.Services;
 using SoClover.Tests.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
+
 
 namespace SoClover.Tests.Services
 {
     public class RoomServiceTests : IDisposable
     {
         private readonly SoCloverDBContext _context;
+        private readonly Mock<ICardManager> _cardManagerMock;
         private readonly RoomService _service;
 
         public RoomServiceTests()
         {
             _context = TestDbContextFactory.Create();
-            _service = new RoomService(_context);
+
+            _cardManagerMock = new Mock<ICardManager>();
+
+            _service = new RoomService(_context, _cardManagerMock.Object);
         }
 
         public void Dispose()
@@ -31,11 +33,8 @@ namespace SoClover.Tests.Services
         #region CreateRoomAsync Tests
 
         [Fact]
-        public async Task CreateRoomAsync_ShouldCreateRoom_WithCorrectNumberOfCards()
+        public async Task CreateRoomAsync_ShouldCreateRoom_AndCallCardManager()
         {
-            // Arrange
-
-
             // Act
             var result = await _service.CreateRoomAsync();
 
@@ -43,11 +42,14 @@ namespace SoClover.Tests.Services
             result.Should().NotBeNull();
             result.RoomCode.Should().HaveLength(4);
             result.Status.Should().Be(GameStatus.Lobby);
-            result.GameRoomCards.Should().HaveCount(RoomService.CARDS_NEEDED_FOR_ROOM);
 
-            var roomInDb = await _context.GameRooms.Include(r => r.GameRoomCards).FirstOrDefaultAsync(r => r.Id == result.Id);
+            var roomInDb = await _context.GameRooms.FirstOrDefaultAsync(r => r.Id == result.Id);
             roomInDb.Should().NotBeNull();
-            roomInDb!.GameRoomCards.All(c => c.Location == CardLocation.InDeck).Should().BeTrue();
+
+            _cardManagerMock.Verify(
+                cm => cm.CreateDeckForRoomAsync(It.IsAny<GameRoom>()),
+                Times.Once
+            );
         }
 
         #endregion
@@ -62,7 +64,7 @@ namespace SoClover.Tests.Services
             var playerGuid = Guid.NewGuid();
 
             // Act
-            var result = await _service.JoinRoomAsync(room.RoomCode, "Player1", "conn1", playerGuid);
+            var result = await _service.JoinRoomAsync(room.RoomCode, "Player1", playerGuid);
 
             // Assert
             result.Should().NotBeNull();
@@ -71,10 +73,26 @@ namespace SoClover.Tests.Services
         }
 
         [Fact]
+        public async Task JoinRoomAsync_ShouldReturnExistingData_WhenPlayerIsAlreadyInRoom()
+        {
+            // Arrange
+            var room = await _service.CreateRoomAsync();
+            var playerGuid = Guid.NewGuid();
+
+            await _service.JoinRoomAsync(room.RoomCode, "Player1", playerGuid);
+
+            // Act
+            var result = await _service.JoinRoomAsync(room.RoomCode, "Player1", playerGuid);
+
+            // Assert
+            result.Players.Should().ContainSingle();
+        }
+
+        [Fact]
         public async Task JoinRoomAsync_ShouldThrowException_WhenRoomDoesNotExist()
         {
             // Act
-            Func<Task> act = async () => await _service.JoinRoomAsync("NONX", "Player", "conn", Guid.NewGuid());
+            Func<Task> act = async () => await _service.JoinRoomAsync("NONX", "Player", Guid.NewGuid());
 
             // Assert
             await act.Should().ThrowAsync<Exception>().WithMessage("Room does not exist");
@@ -89,7 +107,7 @@ namespace SoClover.Tests.Services
             await _context.SaveChangesAsync();
 
             // Act
-            Func<Task> act = async () => await _service.JoinRoomAsync(room.RoomCode, "Player", "conn", Guid.NewGuid());
+            Func<Task> act = async () => await _service.JoinRoomAsync(room.RoomCode, "Player", Guid.NewGuid());
 
             // Assert
             await act.Should().ThrowAsync<Exception>().WithMessage("Game just started");
@@ -103,12 +121,12 @@ namespace SoClover.Tests.Services
 
             for (int i = 0; i < 6; i++)
             {
-                room.Players.Add(new Player { Name = $"P{i}", ConnectionId = $"c{i}", PlayerGuid = Guid.NewGuid() });
+                room.Players.Add(new Player { Name = $"P{i}", PlayerGuid = Guid.NewGuid() });
             }
             await _context.SaveChangesAsync();
 
             // Act
-            Func<Task> act = async () => await _service.JoinRoomAsync(room.RoomCode, "ExtraPlayer", "conn", Guid.NewGuid());
+            Func<Task> act = async () => await _service.JoinRoomAsync(room.RoomCode, "ExtraPlayer", Guid.NewGuid());
 
             // Assert
             await act.Should().ThrowAsync<Exception>().WithMessage("Room is full");
@@ -126,11 +144,11 @@ namespace SoClover.Tests.Services
 
             var p1Guid = Guid.NewGuid();
             var p2Guid = Guid.NewGuid();
-            await _service.JoinRoomAsync(room.RoomCode, "P1", "conn1", p1Guid);
-            await _service.JoinRoomAsync(room.RoomCode, "P2", "conn2", p2Guid);
+            await _service.JoinRoomAsync(room.RoomCode, "P1", p1Guid);
+            await _service.JoinRoomAsync(room.RoomCode, "P2", p2Guid);
 
-            // Act - P1 opuszcza pokój
-            var result = await _service.LeaveRoomAsync("conn1");
+            // Act
+            var result = await _service.LeaveRoomAsync(p1Guid);
 
             // Assert
             result.Should().NotBeNull();
@@ -146,10 +164,11 @@ namespace SoClover.Tests.Services
         {
             // Arrange
             var room = await _service.CreateRoomAsync();
-            await _service.JoinRoomAsync(room.RoomCode, "LastPlayer", "conn1", Guid.NewGuid());
+            var pGuid = Guid.NewGuid();
+            await _service.JoinRoomAsync(room.RoomCode, "LastPlayer", pGuid);
 
             // Act
-            var result = await _service.LeaveRoomAsync("conn1");
+            var result = await _service.LeaveRoomAsync(pGuid);
 
             // Assert
             result.Should().BeNull();
@@ -159,10 +178,10 @@ namespace SoClover.Tests.Services
         }
 
         [Fact]
-        public async Task LeaveRoomAsync_ShouldReturnNull_WhenConnectionIdNotFound()
+        public async Task LeaveRoomAsync_ShouldReturnNull_WhenPlayerGuidNotFound()
         {
             // Act
-            var result = await _service.LeaveRoomAsync("invalid_connection_id");
+            var result = await _service.LeaveRoomAsync(Guid.NewGuid());
 
             // Assert
             result.Should().BeNull();

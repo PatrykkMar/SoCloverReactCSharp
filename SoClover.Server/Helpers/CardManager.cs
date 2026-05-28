@@ -6,14 +6,15 @@ namespace SoClover.Server.Helpers
 {
     public interface ICardManager
     {
-        Task CreateDeckAsync(int roomId);
+        Task CreateDeckForRoomAsync(GameRoom room);
         Task AssignCardsToPlayersAsync(int[] playerIds, int roomId);
-        Task MoveToBoardAsync(int gameRoomCardId, int boardId, int position);
-        Task MoveToHandAsync(int gameRoomCardId);
+        Task<List<GameRoomCard>> DrawBonusCardsAsync(int roomId, int count);
+        Task ReleasePlayerCardsToDeckAsync(int roomId, int playerId);
     }
     public class CardManager : ICardManager
     {
         private readonly SoCloverDBContext _context;
+        public const int CARDS_NEEDED_FOR_ROOM = 40;
 
         public CardManager(SoCloverDBContext context)
         {
@@ -57,19 +58,18 @@ namespace SoClover.Server.Helpers
                 .ToListAsync();
         }
 
-        public async Task CreateDeckAsync(int roomId)
+        public async Task CreateDeckForRoomAsync(GameRoom room)
         {
             var allCards = await _context.Cards.ToListAsync();
             var deck = allCards.Select(c => new GameRoomCard
             {
-                GameRoomId = roomId,
+                GameRoom = room,
                 CardId = c.Id,
                 Location = CardLocation.InDeck
             })
             .OrderBy(r => Guid.NewGuid());
 
             _context.GameRoomCards.AddRange(deck);
-            await _context.SaveChangesAsync();
         }
 
         public async Task AssignCardsToPlayersAsync(int[] playerIds, int roomId)
@@ -102,52 +102,49 @@ namespace SoClover.Server.Helpers
             }
         }
 
-        public async Task MoveToBoardAsync(int gameRoomCardId, int boardId, int position)
+        public async Task<List<GameRoomCard>> DrawBonusCardsAsync(int roomId, int count)
         {
-            var card = await _context.GameRoomCards.FindAsync(gameRoomCardId);
-            if (card == null) return;
+            var bonusCards = await DrawCardsFromDeckAsync(roomId, count);
 
-            card.Location = CardLocation.OnBoard;
-
-            var existingSlot = await _context.BoardSlots
-                .FirstOrDefaultAsync(s => s.BoardId == boardId);
-
-            if (existingSlot != null)
+            foreach (var card in bonusCards)
             {
-                if (existingSlot.GameRoomCardId.HasValue)
+                card.Location = CardLocation.InHand;
+            }
+
+            return bonusCards;
+        }
+
+        public async Task ReleasePlayerCardsToDeckAsync(int roomId, int playerId)
+        {
+            var boardSlots = await _context.BoardSlots
+                .Where(bs => bs.Board!.PlayerId == playerId)
+                .Include(bs => bs.GameRoomCard)
+                .ToListAsync();
+
+            foreach (var slot in boardSlots)
+            {
+                if (slot.GameRoomCard != null)
                 {
-                    var oldCard = await _context.GameRoomCards.FindAsync(existingSlot.GameRoomCardId.Value);
-                    if (oldCard != null) oldCard.Location = CardLocation.InHand;
+                    slot.GameRoomCard.Location = CardLocation.InDeck;
+                    slot.GameRoomCard.CurrentRotation = 0;
+                    slot.GameRoomCard = null;
                 }
-
-                existingSlot.GameRoomCardId = gameRoomCardId;
+                slot.TargetGameRoomCard = null;
+                slot.TargetGameRoomCardId = null;
+                slot.TargetRotation = 0;
+                slot.IsCorrect = false;
             }
-            else
+
+            var bonusCards = await _context.GameRoomCards
+                .Where(grc => grc.GameRoomId == roomId && grc.Location == CardLocation.InHand)
+                .ToListAsync();
+
+            foreach (var card in bonusCards)
             {
-                _context.BoardSlots.Add(new BoardSlot
-                {
-                    BoardId = boardId,
-                    GameRoomCardId = gameRoomCardId
-                });
+                card.Location = CardLocation.InDeck;
+                card.CurrentRotation = 0;
             }
-
-            await _context.SaveChangesAsync();
         }
 
-        public async Task MoveToHandAsync(int gameRoomCardId)
-        {
-            var card = await _context.GameRoomCards.FindAsync(gameRoomCardId);
-            if (card == null) return;
-
-            card.Location = CardLocation.InHand;
-
-            var slot = await _context.BoardSlots.FirstOrDefaultAsync(s => s.GameRoomCardId == gameRoomCardId);
-            if (slot != null)
-            {
-                slot.GameRoomCard = null;
-            }
-
-            await _context.SaveChangesAsync();
-        }
     }
 }

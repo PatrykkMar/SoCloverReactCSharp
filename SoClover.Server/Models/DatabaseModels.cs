@@ -26,7 +26,7 @@ namespace SoClover.Server.Models
         public GameStatus Status { get; set; }
 
         public int? CheckedPlayerId { get; set; }
-
+        public int NumberOfAttempts { get; set; }
 
 
         public Player? CheckedPlayer { get; set; }
@@ -43,7 +43,6 @@ namespace SoClover.Server.Models
         public string Name { get; set; } = string.Empty;
         public int GameRoomId { get; set; }
         public bool IsReady { get; set; }
-        public int Score { get; set; }
 
 
         public GameRoom GameRoom { get; set; } = null!;

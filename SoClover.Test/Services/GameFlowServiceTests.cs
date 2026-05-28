@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using SoClover.Server.Context;
 using SoClover.Server.Helpers;
@@ -8,22 +9,23 @@ using SoClover.Tests.Context;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace SoClover.Tests.Services
 {
-    public class GameServiceTests : IDisposable
+    public class GameFlowServiceTests : IDisposable
     {
         private readonly SoCloverDBContext _context;
         private readonly Mock<ICardManager> _cardManagerMock;
-        private readonly GameService _service;
+        private readonly GameFlowService _service;
 
-        public GameServiceTests()
+        public GameFlowServiceTests()
         {
             _context = TestDbContextFactory.Create();
             _cardManagerMock = new Mock<ICardManager>();
-            _service = new GameService(_context, _cardManagerMock.Object);
+
+            _service = new GameFlowService(_context, _cardManagerMock.Object);
         }
 
         public void Dispose()
@@ -38,18 +40,22 @@ namespace SoClover.Tests.Services
         {
             // Arrange
             var room = new GameRoom { RoomCode = "ABCD", Status = GameStatus.Lobby };
-            var p1 = new Player { ConnectionId = "conn1", Name = "P1", GameRoom = room };
-            var p2 = new Player { ConnectionId = "conn2", Name = "P2", GameRoom = room };
+            var p1Guid = Guid.NewGuid();
+            var p2Guid = Guid.NewGuid();
+
+            var p1 = new Player { PlayerGuid = p1Guid, Name = "P1", GameRoom = room };
+            var p2 = new Player { PlayerGuid = p2Guid, Name = "P2", GameRoom = room };
 
             _context.GameRooms.Add(room);
             _context.Players.AddRange(p1, p2);
             await _context.SaveChangesAsync();
 
             // Act
-            var result = await _service.StartGameAsync("conn1");
+            var result = await _service.StartGameAsync(p1Guid);
 
             // Assert
             result.Status.Should().Be(GameStatus.Writing);
+
 
             _cardManagerMock.Verify(cm => cm.AssignCardsToPlayersAsync(
                 It.Is<int[]>(list => list.Contains(p1.Id) && list.Contains(p2.Id)),
@@ -62,14 +68,15 @@ namespace SoClover.Tests.Services
         {
             // Arrange
             var room = new GameRoom { RoomCode = "ABCD", Status = GameStatus.Lobby };
-            var p1 = new Player { ConnectionId = "conn1", Name = "P1", GameRoom = room };
+            var p1Guid = Guid.NewGuid();
+            var p1 = new Player { PlayerGuid = p1Guid, Name = "P1", GameRoom = room };
 
             _context.GameRooms.Add(room);
             _context.Players.Add(p1);
             await _context.SaveChangesAsync();
 
             // Act
-            Func<Task> act = async () => await _service.StartGameAsync("conn1");
+            Func<Task> act = async () => await _service.StartGameAsync(p1Guid);
 
             // Assert
             await act.Should().ThrowAsync<Exception>().WithMessage("Not enough players to start");
@@ -80,11 +87,12 @@ namespace SoClover.Tests.Services
         #region SubmitCluesAsync Tests
 
         [Fact]
-        public async Task SubmitCluesAsync_ShouldMoveCardsToHand_SaveClues_AndSetStatusToSolving()
+        public async Task SubmitCluesAsync_ShouldMoveCardsToHand_SaveClues_AndCallDrawBonusCards()
         {
             // Arrange
             var room = new GameRoom { RoomCode = "GAME", Status = GameStatus.Writing };
-            var player = new Player { ConnectionId = "player_conn", Name = "Jan", GameRoom = room };
+            var pGuid = Guid.NewGuid();
+            var player = new Player { PlayerGuid = pGuid, Name = "Jan", GameRoom = room };
             var board = new Board { Player = player };
             player.Board = board;
 
@@ -92,19 +100,19 @@ namespace SoClover.Tests.Services
             var slot = new BoardSlot { Board = board, PositionIndex = 0, GameRoomCard = card };
             board.BoardSlots.Add(slot);
 
-            var deckCard1 = new GameRoomCard { GameRoom = room, Location = CardLocation.InDeck };
-            var deckCard2 = new GameRoomCard { GameRoom = room, Location = CardLocation.InDeck };
-
             _context.GameRooms.Add(room);
             _context.Players.Add(player);
             _context.Boards.Add(board);
-            _context.GameRoomCards.AddRange(card, deckCard1, deckCard2);
+            _context.GameRoomCards.Add(card);
             await _context.SaveChangesAsync();
 
             string[] clues = ["Up", "Right", "Down", "Left"];
 
+            _cardManagerMock.Setup(cm => cm.DrawBonusCardsAsync(room.Id, 2))
+                .ReturnsAsync(new List<GameRoomCard>());
+
             // Act
-            var result = await _service.SubmitCluesAsync("player_conn", clues);
+            var result = await _service.SubmitCluesAsync(pGuid, clues);
 
             // Assert
             result.Status.Should().Be(GameStatus.Solving);
@@ -119,8 +127,7 @@ namespace SoClover.Tests.Services
             slot.TargetRotation.Should().Be(1);
             card.Location.Should().Be(CardLocation.InHand);
 
-            deckCard1.Location.Should().Be(CardLocation.InHand);
-            deckCard2.Location.Should().Be(CardLocation.InHand);
+            _cardManagerMock.Verify(cm => cm.DrawBonusCardsAsync(room.Id, 2), Times.Once);
         }
 
         [Fact]
@@ -128,7 +135,8 @@ namespace SoClover.Tests.Services
         {
             // Arrange
             var room = new GameRoom { RoomCode = "GAME", Status = GameStatus.Writing };
-            var player = new Player { ConnectionId = "player_conn", Name = "Jan", GameRoom = room };
+            var pGuid = Guid.NewGuid();
+            var player = new Player { PlayerGuid = pGuid, Name = "Jan", GameRoom = room };
             player.Board = new Board { Player = player };
 
             _context.GameRooms.Add(room);
@@ -138,7 +146,7 @@ namespace SoClover.Tests.Services
             string[] incompleteClues = ["Up", "Right", "Down"];
 
             // Act
-            Func<Task> act = async () => await _service.SubmitCluesAsync("player_conn", incompleteClues);
+            Func<Task> act = async () => await _service.SubmitCluesAsync(pGuid, incompleteClues);
 
             // Assert
             await act.Should().ThrowAsync<Exception>().WithMessage("Not enough clues provided");
@@ -146,73 +154,60 @@ namespace SoClover.Tests.Services
 
         #endregion
 
-        #region CreateBoardDTOsForPlayersInRoom Tests
+        #region ReturnToWritingAsync Tests
 
         [Fact]
-        public async Task CreateBoardDTOsForPlayersInRoom_ShouldReturnCorrectDTOs_InLobbyOrWritingState()
+        public async Task ReturnToWritingAsync_ShouldResetState_CallReleaseAndReassignCards()
         {
             // Arrange
-            var room = new GameRoom { Status = GameStatus.Writing };
-            var p1 = new Player { Name = "P1", GameRoom = room, Board = new Board { TopClue = "P1_Top" } };
-            var p2 = new Player { Name = "P2", GameRoom = room, Board = new Board { TopClue = "P2_Top" } };
+            var room = new GameRoom { RoomCode = "BACK", Status = GameStatus.Solving };
+            var pGuid = Guid.NewGuid();
+            var player = new Player { PlayerGuid = pGuid, Name = "Jan", GameRoom = room, IsReady = true };
+            var board = new Board { Player = player, TopClue = "OldClue", IsActive = true };
+            player.Board = board;
+            room.CheckedPlayer = player;
 
             _context.GameRooms.Add(room);
-            _context.Players.AddRange(p1, p2);
+            _context.Players.Add(player);
+            _context.Boards.Add(board);
             await _context.SaveChangesAsync();
 
             // Act
-            var result = await _service.CreateBoardDTOsForPlayersInRoomAsync(room.Id);
+            var result = await _service.ReturnToWritingAsync(pGuid);
 
             // Assert
-            result.Should().HaveCount(2);
-            result[p1].TopClue.Should().Be("P1_Top");
-            result[p2].TopClue.Should().Be("P2_Top");
+            result.Status.Should().Be(GameStatus.Writing);
+            result.CheckedPlayer.Should().BeNull();
+            player.IsReady.Should().BeFalse();
+
+            board.TopClue.Should().BeEmpty();
+            board.IsActive.Should().BeFalse();
+
+            _cardManagerMock.Verify(cm => cm.ReleasePlayerCardsToDeckAsync(room.Id, player.Id), Times.Once);
+
+            _cardManagerMock.Verify(cm => cm.AssignCardsToPlayersAsync(
+                It.Is<int[]>(list => list.Length == 1 && list.Contains(player.Id)),
+                room.Id
+            ), Times.Once);
         }
 
         [Fact]
-        public async Task CreateBoardDTOsForPlayersInRoom_ShouldReturnCheckedPlayerBoard_ForEveryone_InSolvingState()
+        public async Task ReturnToWritingAsync_ShouldThrowException_WhenGameIsNotInSolvingState()
         {
             // Arrange
-            var room = new GameRoom { Status = GameStatus.Solving };
-            var p1 = new Player { Name = "P1", GameRoom = room, Board = new Board { TopClue = "P1_Top" } };
-            var p2 = new Player { Name = "P2", GameRoom = room, Board = new Board { TopClue = "P2_Top" } };
-
-            room.CheckedPlayer = p1;
+            var room = new GameRoom { RoomCode = "BACK", Status = GameStatus.Lobby };
+            var pGuid = Guid.NewGuid();
+            var player = new Player { PlayerGuid = pGuid, Name = "Jan", GameRoom = room };
 
             _context.GameRooms.Add(room);
-            _context.Players.AddRange(p1, p2);
+            _context.Players.Add(player);
             await _context.SaveChangesAsync();
 
             // Act
-            var result = await _service.CreateBoardDTOsForPlayersInRoomAsync(room.Id);
+            Func<Task> act = async () => await _service.ReturnToWritingAsync(pGuid);
 
             // Assert
-            result.Should().HaveCount(2);
-            result[p1].TopClue.Should().Be("P1_Top");
-            result[p2].TopClue.Should().Be("P1_Top");
-        }
-
-        #endregion
-
-        #region RotateCard Tests
-
-        [Fact]
-        public async Task RotateCard_ShouldIncrementRotation_AndWrapAroundAtFour()
-        {
-            // Arrange
-            var room = new GameRoom { RoomCode = "ROTA" };
-            var card = new GameRoomCard { GameRoom = room, CurrentRotation = 3 };
-
-            _context.GameRooms.Add(room);
-            _context.GameRoomCards.Add(card);
-            await _context.SaveChangesAsync();
-
-            // Act
-            var resultRoom = await _service.RotateCardAsync(card.Id);
-
-            // Assert
-            card.CurrentRotation.Should().Be(0);
-            resultRoom.Id.Should().Be(room.Id);
+            await act.Should().ThrowAsync<Exception>().WithMessage("Can only rollback from Solving state");
         }
 
         #endregion

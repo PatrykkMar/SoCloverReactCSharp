@@ -82,6 +82,15 @@ export default function Board() {
     };
 
     const handleReturnToWriting = () => {
+        const allCardsCorrect = board.cards
+            .filter(card => card.location === "OnBoard")
+            .every(card => card.isCorrect);
+
+        if (allCardsCorrect) {
+            returnToWriting();
+            return;
+        }
+
         if (window.confirm("Are you sure you want to return to writing? This will reset the board and all clues.")) {
             returnToWriting();
         }
@@ -151,10 +160,11 @@ export default function Board() {
             {roomContext.status === GameStatus.Solving && (
                 <>
                     <Hand cards={handCards} />
-                    {!boardContext.board.isChecked && (
-                        <button className="btn btn-primary mt-3" onClick={handleCheck}>
-                            Check
-                        </button>
+                    {!boardContext.board.isChecked &&
+                        !boardContext.board.cards.filter(card => card.location === "OnBoard").every(card => card.isCorrect) && (
+                            <button className="btn btn-primary mt-3" onClick={handleCheck}>
+                                Check
+                            </button>
                     )}
 
                     <button className="btn btn-primary mt-3" onClick={handleReturnToWriting}>
