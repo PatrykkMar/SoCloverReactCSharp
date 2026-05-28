@@ -8,13 +8,13 @@ namespace SoClover.Server.Services
 {
     public interface IGameService
     {
-        public Task<GameRoom> StartGameAsync(string roomCode);
-        Task<GameRoom> SubmitCluesAsync(string playerConnectionId, string[] words);
+        public Task<GameRoom> StartGameAsync(Guid playerGuid);
+        Task<GameRoom> SubmitCluesAsync(Guid playerGuid, string[] words);
         Task<Dictionary<Player, BoardDataDTO>> CreateBoardDTOsForPlayersInRoomAsync(int roomId);
         Task<GameRoom> RotateCardAsync(int gameRoomCardId);
-        Task<GameRoom> MoveCardToSlotAsync(string playerConnectionId, int gameRoomCardId, int positionIndex);
-        Task<GameRoom> CheckAsync(string playerConnectionId);
-        Task<GameRoom> ReturnToWritingAsync(string playerConnectionId);
+        Task<GameRoom> MoveCardToSlotAsync(Guid playerGuid, int gameRoomCardId, int positionIndex);
+        Task<GameRoom> CheckAsync(Guid playerGuid);
+        Task<GameRoom> ReturnToWritingAsync(Guid playerGuid);
     }
 
     public class GameService(SoCloverDBContext context, ICardManager cardManager) : IGameService
@@ -22,12 +22,11 @@ namespace SoClover.Server.Services
         private readonly SoCloverDBContext _context = context;
         private readonly ICardManager _cardManager = cardManager;
 
-        public async Task<GameRoom> StartGameAsync(string playerConnectionId)
+        public async Task<GameRoom> StartGameAsync(Guid playerGuid)
         {
             var room = await _context.GameRooms
                 .Include(r => r.Players)
-                .FirstOrDefaultAsync(r => r.Players.Any(p => p.ConnectionId == playerConnectionId));
-
+                .FirstOrDefaultAsync(r => r.Players.Any(p => p.PlayerGuid == playerGuid));
             if (room == null) throw new Exception("Room does not exist");
             if (room.Status != GameStatus.Lobby) throw new Exception("Game already started");
             if (room.Players.Count < 2) throw new Exception("Not enough players to start");
@@ -40,7 +39,7 @@ namespace SoClover.Server.Services
         }
 
 
-        public async Task<GameRoom> SubmitCluesAsync(string playerConnectionId, string[] words)
+        public async Task<GameRoom> SubmitCluesAsync(Guid playerGuid, string[] words)
         {
             var room = await _context.GameRooms
                 .Include(r => r.Players)
@@ -48,13 +47,13 @@ namespace SoClover.Server.Services
                 .ThenInclude(b => b.BoardSlots)
                 .ThenInclude(bs => bs.GameRoomCard)
                 .AsSplitQuery()
-                .FirstOrDefaultAsync(r => r.Players.Any(p => p.ConnectionId == playerConnectionId));
+                .FirstOrDefaultAsync(r => r.Players.Any(p => p.PlayerGuid == playerGuid));
 
             if (room == null) throw new Exception("Room not found");
 
             room.Status = GameStatus.Solving;
 
-            var currentPlayer = room.Players.First(p => p.ConnectionId == playerConnectionId);
+            var currentPlayer = room.Players.First(p => p.PlayerGuid == playerGuid);
             var board = currentPlayer.Board;
 
             if (board == null) throw new Exception("Player board not found");
@@ -151,18 +150,18 @@ namespace SoClover.Server.Services
             return card.GameRoom;
         }
 
-        public async Task<GameRoom> MoveCardToSlotAsync(string playerConnectionId, int gameRoomCardId, int positionIndex)
+        public async Task<GameRoom> MoveCardToSlotAsync(Guid playerGuid, int gameRoomCardId, int positionIndex)
         {
             var room = await _context.GameRooms
                 .Include(r => r.Players)
                 .ThenInclude(p => p.Board)
                 .ThenInclude(b => b!.BoardSlots)
                 .ThenInclude(bs => bs.GameRoomCard)
-                .FirstOrDefaultAsync(r => r.Players.Any(p => p.ConnectionId == playerConnectionId));
+                .FirstOrDefaultAsync(r => r.Players.Any(p => p.PlayerGuid == playerGuid));
 
             if (room == null) throw new Exception("Connection not found");
 
-            var player = room.Players.First(p => p.ConnectionId == playerConnectionId);
+            var player = room.Players.First(p => p.PlayerGuid == playerGuid);
             var board = room.Players.Select(p => p.Board).FirstOrDefault(b => b!.IsActive) ?? throw new Exception("Player does not have an assigned board.");
 
             var movingCard = await _context.GameRoomCards
@@ -190,7 +189,7 @@ namespace SoClover.Server.Services
             await _context.SaveChangesAsync();
             return room;
         }
-        public async Task<GameRoom> CheckAsync(string playerConnectionId)
+        public async Task<GameRoom> CheckAsync(Guid playerGuid)
         {
             var board = _context.Boards
                 .Include(b => b.Player)
@@ -198,7 +197,7 @@ namespace SoClover.Server.Services
                 .ThenInclude(gr => gr.Players)
                 .Include(b => b.BoardSlots)
                 .ThenInclude(bs => bs.GameRoomCard)
-                .FirstOrDefault(x => x.IsActive && x.Player.GameRoom.Players.Any(x=>x.ConnectionId == playerConnectionId)) ?? throw new Exception("Active board for player not found");
+                .FirstOrDefault(x => x.IsActive && x.Player.GameRoom.Players.Any(x=>x.PlayerGuid == playerGuid)) ?? throw new Exception("Active board for player not found");
 
             foreach(var slot in board.BoardSlots)
             {
@@ -210,7 +209,7 @@ namespace SoClover.Server.Services
             return board.Player.GameRoom;
         }
 
-        public async Task<GameRoom> ReturnToWritingAsync(string playerConnectionId)
+        public async Task<GameRoom> ReturnToWritingAsync(Guid playerGuid)
         {
             var room = await _context.GameRooms
                 .Include(r => r.CheckedPlayer)
@@ -220,7 +219,7 @@ namespace SoClover.Server.Services
                             .ThenInclude(bs => bs.GameRoomCard)
                 .Include(r => r.GameRoomCards)
                 .AsSplitQuery()
-                .FirstOrDefaultAsync(r => r.Players.Any(p => p.ConnectionId == playerConnectionId));
+                .FirstOrDefaultAsync(r => r.Players.Any(p => p.PlayerGuid == playerGuid));
 
             if (room == null) throw new Exception("Room not found");
             if (room.Status != GameStatus.Solving) throw new Exception("Can only rollback from Solving state");

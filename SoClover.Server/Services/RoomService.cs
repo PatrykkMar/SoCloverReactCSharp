@@ -9,8 +9,8 @@ namespace SoClover.Server.Services
     public interface IRoomService
     {
         Task<GameRoom> CreateRoomAsync();
-        Task<RoomDataDTO> JoinRoomAsync(string roomCode, string playerName, string connectionId, Guid playerGuid);
-        Task<RoomDataDTO?> LeaveRoomAsync(string connectionId);
+        Task<RoomDataDTO> JoinRoomAsync(string roomCode, string playerName, Guid playerGuid);
+        Task<RoomDataDTO?> LeaveRoomAsync(Guid playerGuid);
         Task<RoomDataDTO> GetRoomDataAsync(int roomId);
     }
 
@@ -49,7 +49,7 @@ namespace SoClover.Server.Services
             return room;
         }
 
-        public async Task<RoomDataDTO> JoinRoomAsync(string roomCode, string playerName, string connectionId, Guid playerGuid)
+        public async Task<RoomDataDTO> JoinRoomAsync(string roomCode, string playerName, Guid playerGuid)
         {
             var room = await _context.GameRooms
                 .Include(r => r.Players)
@@ -61,7 +61,6 @@ namespace SoClover.Server.Services
 
             if (existingPlayer != null)
             {
-                existingPlayer.ConnectionId = connectionId;
                 await _context.SaveChangesAsync();
                 return await GetRoomDataAsync(room.Id);
             }
@@ -72,7 +71,6 @@ namespace SoClover.Server.Services
             var player = new Player
             {
                 Name = playerName,
-                ConnectionId = connectionId,
                 GameRoom = room,
                 PlayerGuid = playerGuid,
                 IsReady = false,
@@ -85,12 +83,12 @@ namespace SoClover.Server.Services
             return await GetRoomDataAsync(room.Id);
         }
 
-        public async Task<RoomDataDTO?> LeaveRoomAsync(string connectionId)
+        public async Task<RoomDataDTO?> LeaveRoomAsync(Guid playerGuid)
         {
             var player = await _context.Players
                 .Include(p => p.GameRoom)
                     .ThenInclude(r => r.Players)
-                .FirstOrDefaultAsync(p => p.ConnectionId == connectionId);
+                .FirstOrDefaultAsync(p => p.PlayerGuid == playerGuid);
 
             if (player == null) return null;
 

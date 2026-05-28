@@ -41,10 +41,6 @@ namespace SoClover.Server.Models
 
         [Required, StringLength(30)]
         public string Name { get; set; } = string.Empty;
-
-        [StringLength(100)]
-        public string? ConnectionId { get; set; }
-
         public int GameRoomId { get; set; }
         public bool IsReady { get; set; }
         public int Score { get; set; }

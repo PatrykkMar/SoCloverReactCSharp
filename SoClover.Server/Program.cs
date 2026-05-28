@@ -8,12 +8,14 @@ using SoClover.Server.Filters;
 using SoClover.Server.Helpers;
 using SoClover.Server.Hubs;
 using SoClover.Server.Services;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
 
 //CORS
 builder.Services.AddCors(options =>
@@ -54,6 +56,8 @@ builder.Services.AddHostedService<DatabaseCleanupService>();
 
 //Helpers
 builder.Services.AddTransient<ICardManager, CardManager>();
+builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<SoCloverDBContext>(options =>
@@ -122,3 +126,12 @@ app.MapControllers();
 app.MapHub<SoCloverHub>("/socloverhub");
 
 app.Run();
+
+
+public class NameIdentifierUserIdProvider : IUserIdProvider
+{
+    public string? GetUserId(HubConnectionContext connection)
+    {
+        return connection.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    }
+}

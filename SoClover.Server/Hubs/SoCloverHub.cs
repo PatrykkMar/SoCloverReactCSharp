@@ -1,4 +1,5 @@
 ﻿using Azure.Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using SoClover.Server.Models;
 using SoClover.Server.Models.Requests;
@@ -6,14 +7,31 @@ using SoClover.Server.Services;
 
 namespace SoClover.Server.Hubs
 {
+    [Authorize]
     public class SoCloverHub(IRoomService roomService, IGameService gameService) : Hub
     {
         private readonly IRoomService _roomService = roomService;
         private readonly IGameService _gameService = gameService;
 
+        private Guid PlayerGuid
+        {
+            get
+            {
+                var idString = Context.UserIdentifier;
+                if (string.IsNullOrEmpty(idString))
+                {
+                    throw new HubException("Player ID missing from token.");
+                }
+                return Guid.Parse(idString);
+            }
+        }
+
+        private string PlayerName => Context.User?.Identity?.Name
+            ?? throw new HubException("Username missing from token.");
+
         public override async Task OnConnectedAsync()
         {
-
+            Console.WriteLine($"Player {PlayerName} ({PlayerGuid}) connected via WebSocket.");
             await base.OnConnectedAsync();
         }
 
@@ -21,8 +39,8 @@ namespace SoClover.Server.Hubs
         public async Task CreateRoom(CreateRoomRequest request)
         {
             var room = await _roomService.CreateRoomAsync();
-            var roomData = await _roomService.JoinRoomAsync(room.RoomCode, request.PlayerName, Context.ConnectionId, request.PlayerGuid);
-            await Groups.AddToGroupAsync(Context.ConnectionId, room.RoomCode);
+            var roomData = await _roomService.JoinRoomAsync(room.RoomCode, request.PlayerName, PlayerGuid);
+            await Groups.AddToGroupAsync(Context.ConnectionId, room.RoomCode.ToUpper());
             await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
         }
 
@@ -30,23 +48,21 @@ namespace SoClover.Server.Hubs
         {
             var roomData = await _roomService.JoinRoomAsync(
                 request.RoomCode,
-                request.PlayerName,
-                Context.ConnectionId,
-                request.PlayerGuid
+                PlayerName,
+                PlayerGuid
             );
 
             await Groups.AddToGroupAsync(Context.ConnectionId, roomData.RoomCode.ToUpper());
-
             await Clients.Group(roomData.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var roomData = await _roomService.LeaveRoomAsync(Context.ConnectionId);
+            var roomData = await _roomService.LeaveRoomAsync(PlayerGuid);
 
-            if (roomData != null)
+            if (roomData != null && !string.IsNullOrEmpty(roomData.RoomCode))
             {
-                await Clients.All.SendAsync("RoomUpdated", roomData);
+                await Clients.Group(roomData.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
             }
 
             await base.OnDisconnectedAsync(exception);
@@ -57,7 +73,7 @@ namespace SoClover.Server.Hubs
 
         public async Task StartGame()
         {
-            var room = await _gameService.StartGameAsync(Context.ConnectionId);
+            var room = await _gameService.StartGameAsync(PlayerGuid);
             var roomData = await _roomService.GetRoomDataAsync(room.Id);
             await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
             await SendBoards(room.Id);
@@ -65,7 +81,7 @@ namespace SoClover.Server.Hubs
 
         public async Task SubmitClues(SubmitCluesRequest request)
         {
-            var room = await _gameService.SubmitCluesAsync(Context.ConnectionId, request.Words);
+            var room = await _gameService.SubmitCluesAsync(PlayerGuid, request.Words);
             var roomData = await _roomService.GetRoomDataAsync(room.Id);
             await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
             await SendBoards(room.Id);
@@ -73,7 +89,7 @@ namespace SoClover.Server.Hubs
 
         public async Task ReturnToWriting()
         {
-            var room = await _gameService.ReturnToWritingAsync(Context.ConnectionId);
+            var room = await _gameService.ReturnToWritingAsync(PlayerGuid);
             var roomData = await _roomService.GetRoomDataAsync(room.Id);
             await Clients.Group(room.RoomCode.ToUpper()).SendAsync("RoomUpdated", roomData);
             await SendBoards(room.Id);
@@ -88,15 +104,13 @@ namespace SoClover.Server.Hubs
 
         public async Task MoveCardToSlot(MoveCardRequest request)
         {
-            string connectionId = Context.ConnectionId;
-            var room = await _gameService.MoveCardToSlotAsync(connectionId, request.GameRoomCardId, request.PositionIndex);
+            var room = await _gameService.MoveCardToSlotAsync(PlayerGuid, request.GameRoomCardId, request.PositionIndex);
             await SendBoards(room.Id);
         }
 
         public async Task Check()
         {
-            string connectionId = Context.ConnectionId;
-            var room = await _gameService.CheckAsync(connectionId);
+            var room = await _gameService.CheckAsync(PlayerGuid);
             await SendBoards(room.Id);
         }
 
@@ -108,11 +122,7 @@ namespace SoClover.Server.Hubs
             {
                 var player = entry.Key;
                 var boardDto = entry.Value;
-
-                if (!string.IsNullOrEmpty(player.ConnectionId))
-                {
-                    await Clients.Client(player.ConnectionId).SendAsync("BoardUpdated", boardDto);
-                }
+                await Clients.User(player.PlayerGuid.ToString()).SendAsync("BoardUpdated", boardDto);
             }
         }
     }

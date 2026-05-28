@@ -66,7 +66,6 @@ namespace SoClover.Server.Context
             //indexes
             modelBuilder.Entity<GameRoom>().HasIndex(g => g.RoomCode) .IsUnique();
             modelBuilder.Entity<Player>().HasIndex(p => p.PlayerGuid).IsUnique();
-            modelBuilder.Entity<Player>().HasIndex(p => p.ConnectionId);
 
             CardSeeder.Seed(modelBuilder);
         }

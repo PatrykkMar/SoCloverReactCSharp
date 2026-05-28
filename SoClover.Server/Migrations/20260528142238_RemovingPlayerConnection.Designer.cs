@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SoClover.Server.Context;
 
@@ -11,9 +12,11 @@ using SoClover.Server.Context;
 namespace SoClover.Server.Migrations
 {
     [DbContext(typeof(SoCloverDBContext))]
-    partial class SoCloverDBContextModelSnapshot : ModelSnapshot
+    [Migration("20260528142238_RemovingPlayerConnection")]
+    partial class RemovingPlayerConnection
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

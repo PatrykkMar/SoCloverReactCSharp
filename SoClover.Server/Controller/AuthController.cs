@@ -26,7 +26,7 @@ namespace SoClover.Server.Controllers
         {
             if (string.IsNullOrWhiteSpace(dto.Username))
             {
-                return BadRequest("Nazwa gracza nie może być pusta.");
+                return BadRequest("Username can't be empty");
             }
 
             string playerId = Guid.NewGuid().ToString();
