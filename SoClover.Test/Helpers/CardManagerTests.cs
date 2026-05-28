@@ -1,170 +1,198 @@
 ﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using SoClover.Server.Context;
 using SoClover.Server.Helpers;
 using SoClover.Server.Models;
 using SoClover.Tests.Context;
 
 namespace SoClover.Tests.Helpers
 {
-    public class CardManagerTests
+    public class CardManagerTests : IDisposable
     {
+        private readonly SoCloverDBContext _context;
+        private readonly CardManager _cardManager;
+
+        public CardManagerTests()
+        {
+            _context = TestDbContextFactory.Create();
+            _cardManager = new CardManager(_context);
+        }
+
+        public void Dispose()
+        {
+            TestDbContextFactory.Destroy(_context);
+        }
+
+        #region CreateDeckForRoomAsync Tests
+
         [Fact]
-        public async Task CreateDeckAsync_ShouldCopyAllCardsToRoom()
+        public async Task CreateDeckForRoomAsync_ShouldCopyAllCardsFromDatabaseToRoom()
         {
             // Arrange
-            using var context = TestDbContextFactory.Create();
-            var cardManager = new CardManager(context);
+            var room = new GameRoom { RoomCode = "DECK" };
+            _context.GameRooms.Add(room);
+            await _context.SaveChangesAsync();
+
+            var totalAvailableCards = await _context.Cards.CountAsync();
 
             // Act
-            await cardManager.CreateDeckAsync(roomId: 1);
+            await _cardManager.CreateDeckForRoomAsync(room);
+            await _context.SaveChangesAsync();
 
             // Assert
-            var roomCards = await context.GameRoomCards.Where(rc => rc.GameRoomId == 1).ToListAsync();
-            var allCards = await context.Cards.ToListAsync();
-            roomCards.Should().HaveCount(allCards.Count);
+            var roomCards = await _context.GameRoomCards.Where(rc => rc.GameRoomId == room.Id).ToListAsync();
+
+            roomCards.Should().HaveCount(totalAvailableCards);
             roomCards.All(rc => rc.Location == CardLocation.InDeck).Should().BeTrue();
         }
 
+        #endregion
+
+        #region AssignCardsToPlayersAsync Tests
+
         [Fact]
-        public async Task AssignCardsToPlayersAsync_ShouldGiveEachPlayerUniqueCards()
+        public async Task AssignCardsToPlayersAsync_ShouldGiveEachPlayerFourCardsOnBoardWithTargetConfiguration()
         {
             // Arrange
-            using var context = TestDbContextFactory.Create();
-            var cardManager = new CardManager(context);
+            var room = new GameRoom { RoomCode = "ASGN" };
+            var p1 = new Player { Name = "Gracz 1", GameRoom = room };
+            var p2 = new Player { Name = "Gracz 2", GameRoom = room };
 
+            _context.GameRooms.Add(room);
+            _context.Players.AddRange(p1, p2);
+            await _context.SaveChangesAsync();
 
-            context.GameRooms.Add(new GameRoom { Id = 1, RoomCode = "TEST" });
+            await _cardManager.CreateDeckForRoomAsync(room);
+            await _context.SaveChangesAsync();
 
-            context.Players.Add(new Player { Name = "Gracz 1", GameRoomId = 1 });
-            context.Players.Add(new Player { Name = "Gracz 2", GameRoomId = 1 });
-            await context.SaveChangesAsync();
-
-            await cardManager.CreateDeckAsync(roomId: 1);
+            int[] playerIds = [p1.Id, p2.Id];
 
             // Act
-            var players = await context.Players.Where(p => p.GameRoomId == 1).ToListAsync();
-            await cardManager.AssignCardsToPlayersAsync(players.Select(x => x.Id).ToArray(), roomId: 1);
-            await context.SaveChangesAsync();
+            await _cardManager.AssignCardsToPlayersAsync(playerIds, room.Id);
+            await _context.SaveChangesAsync();
 
             // Assert
-            var boards = await context.Boards.Include(b => b.BoardSlots).ToListAsync();
+            var boards = await _context.Boards.Include(b => b.BoardSlots).ToListAsync();
             boards.Should().HaveCount(2);
-
             boards.All(b => b.BoardSlots.Count == 4).Should().BeTrue();
 
-            var assignedCards = await context.GameRoomCards.Where(c => c.Location == CardLocation.OnBoard).ToListAsync();
-            assignedCards.Should().HaveCount(8);
+            foreach (var slot in boards.SelectMany(b => b.BoardSlots))
+            {
+                slot.GameRoomCard.Should().NotBeNull();
+                slot.TargetGameRoomCard.Should().Be(slot.GameRoomCard);
+                slot.GameRoomCard!.Location.Should().Be(CardLocation.OnBoard);
+                slot.GameRoomCard.CurrentRotation.Should().BeInRange(0, 3);
+            }
+
+            var totalAssignedCards = await _context.GameRoomCards.CountAsync(c => c.GameRoomId == room.Id && c.Location == CardLocation.OnBoard);
+            totalAssignedCards.Should().Be(8);
         }
 
+        #endregion
+
+        #region DrawBonusCardsAsync & DrawCardsFromDeckAsync Tests
+
         [Fact]
-        public async Task MoveToBoardAsync_WhenSlotIsOccupied_ShouldMoveOldCardToHand()
+        public async Task DrawBonusCardsAsync_ShouldReturnRequestedAmountOfCards_AndSetLocationToInHand()
         {
             // Arrange
-            using var context = TestDbContextFactory.Create();
-            var cardManager = new CardManager(context);
+            var room = new GameRoom { RoomCode = "BNS" };
+            _context.GameRooms.Add(room);
+            await _context.SaveChangesAsync();
 
-            var cardInHand = new GameRoomCard { Id = 1, GameRoomId = 1, Location = CardLocation.InHand };
-            var cardOnBoard = new GameRoomCard { Id = 2, GameRoomId = 1, Location = CardLocation.OnBoard };
-
-            context.GameRoomCards.AddRange(cardInHand, cardOnBoard);
-
-            var slot = new BoardSlot
-            {
-                BoardId = 50,
-                GameRoomCardId = 2
-            };
-            context.BoardSlots.Add(slot);
-            await context.SaveChangesAsync();
+            await _cardManager.CreateDeckForRoomAsync(room);
+            await _context.SaveChangesAsync();
 
             // Act
-            await cardManager.MoveToBoardAsync(gameRoomCardId: 1, boardId: 50, position: 0);
+            var result = await _cardManager.DrawBonusCardsAsync(room.Id, 2);
+            await _context.SaveChangesAsync();
 
             // Assert
-            var updatedCard1 = await context.GameRoomCards.FindAsync(1);
-            var updatedCard2 = await context.GameRoomCards.FindAsync(2);
-
-            updatedCard1.Location.Should().Be(CardLocation.OnBoard);
-            updatedCard2.Location.Should().Be(CardLocation.InHand);
-
-            var currentSlot = await context.BoardSlots.FirstAsync(s => s.BoardId == 50);
-            currentSlot.GameRoomCardId.Should().Be(1);
+            result.Should().HaveCount(2);
+            result.All(c => c.Location == CardLocation.InHand).Should().BeTrue();
         }
 
         [Fact]
-        public async Task DrawCards_ShouldShuffleDiscardIntoDeck_WhenDeckIsTooSmall()
+        public async Task DrawCardsFromDeckAsync_ShouldReshuffleDiscardIntoDeck_WhenDeckIsTooSmall()
         {
             // Arrange
-            using var context = TestDbContextFactory.Create();
-            var cardManager = new CardManager(context);
+            var room = new GameRoom { RoomCode = "SHFL" };
+            _context.GameRooms.Add(room);
+            await _context.SaveChangesAsync();
 
-            int roomId = 1;
-
-            for (int i = 0; i < 10; i++)
+            for (int i = 1; i <= 10; i++)
             {
-                context.GameRoomCards.Add(new GameRoomCard
+                _context.GameRoomCards.Add(new GameRoomCard
                 {
-                    GameRoomId = roomId,
+                    GameRoomId = room.Id,
                     CardId = i,
-                    Location = CardLocation.InDeck
+                    Location = i == 1 ? CardLocation.InDeck : CardLocation.Discarded
                 });
             }
-            await context.SaveChangesAsync();
-
-            var cardsToDiscard = await context.GameRoomCards.Take(9).ToListAsync();
-            foreach (var card in cardsToDiscard)
-            {
-                card.Location = CardLocation.Discarded;
-            }
-            await context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
             // Act
-            var drawnCards = await cardManager.DrawCardsFromDeckAsync(roomId, 4);
-            drawnCards.ForEach(x => x.Location = CardLocation.InHand);
-            await context.SaveChangesAsync();
+            var drawnCards = await _cardManager.DrawCardsFromDeckAsync(room.Id, 4);
 
             // Assert
-            Assert.Equal(4, drawnCards.Count);
+            drawnCards.Should().HaveCount(4);
 
-            var deckCount = await context.GameRoomCards
-                .CountAsync(c => c.GameRoomId == roomId && c.Location == CardLocation.InDeck);
+            var remainingDeckCount = await _context.GameRoomCards
+                .CountAsync(c => c.GameRoomId == room.Id && c.Location == CardLocation.InDeck);
 
-            Assert.Equal(6, deckCount);
-            Assert.All(drawnCards, c => Assert.Equal(CardLocation.InHand, c.Location));
+            remainingDeckCount.Should().Be(10);
         }
 
+        #endregion
+
+        #region ReleasePlayerCardsToDeckAsync Tests
+
         [Fact]
-        public async Task MoveToHandAsync_ShouldUpdateLocationAndClearSlot()
+        public async Task ReleasePlayerCardsToDeckAsync_ShouldResetBoardSlots_AndReturnAllCardsToDeck()
         {
             // Arrange
-            using var context = TestDbContextFactory.Create();
-            var cardManager = new CardManager(context);
+            var room = new GameRoom { RoomCode = "RLES" };
+            var player = new Player { Name = "Tester", GameRoom = room };
+            var board = new Board { Player = player };
 
-            var card = new GameRoomCard
-            {
-                Id = 100,
-                Location = CardLocation.OnBoard,
-                GameRoomId = 1
-            };
+            var cardOnBoard = new GameRoomCard { GameRoom = room, Location = CardLocation.OnBoard, CurrentRotation = 2 };
+            var bonusCard = new GameRoomCard { GameRoom = room, Location = CardLocation.InHand, CurrentRotation = 1 };
 
             var slot = new BoardSlot
             {
-                Id = 1,
-                GameRoomCardId = 100
+                Board = board,
+                PositionIndex = 0,
+                GameRoomCard = cardOnBoard,
+                TargetGameRoomCard = cardOnBoard,
+                TargetRotation = 2,
+                IsCorrect = true
             };
 
-            context.GameRoomCards.Add(card);
-            context.BoardSlots.Add(slot);
-            await context.SaveChangesAsync();
+            board.BoardSlots.Add(slot);
+            _context.GameRooms.Add(room);
+            _context.Players.Add(player);
+            _context.Boards.Add(board);
+            _context.GameRoomCards.AddRange(cardOnBoard, bonusCard);
+            await _context.SaveChangesAsync();
 
             // Act
-            await cardManager.MoveToHandAsync(100);
+            await _cardManager.ReleasePlayerCardsToDeckAsync(room.Id, player.Id);
+            await _context.SaveChangesAsync();
 
             // Assert
-            var updatedCard = await context.GameRoomCards.FindAsync(100);
-            var updatedSlot = await context.BoardSlots.FindAsync(1);
+            slot.GameRoomCard.Should().BeNull();
+            slot.TargetGameRoomCard.Should().BeNull();
+            slot.TargetGameRoomCardId.Should().BeNull();
+            slot.TargetRotation.Should().Be(0);
+            slot.IsCorrect.Should().BeFalse();
 
-            Assert.Equal(CardLocation.InHand, updatedCard.Location);
+            cardOnBoard.Location.Should().Be(CardLocation.InDeck);
+            cardOnBoard.CurrentRotation.Should().Be(0);
 
+            bonusCard.Location.Should().Be(CardLocation.InDeck);
+            bonusCard.CurrentRotation.Should().Be(0);
         }
+
+        #endregion
     }
 }
