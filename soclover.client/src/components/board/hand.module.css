@@ -1,0 +1,51 @@
+.handContainer {
+    width: 100%;
+    max-width: 900px;
+    margin: 20px auto 0 auto;
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05), 0 4px 10px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.handTitle {
+    margin: 0;
+    font-size: 16px;
+    color: #34495e;
+    font-weight: 600;
+}
+
+.cardsBelt {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+    min-height: 140px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.handCardWrapper {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.handCardWrapper > div {
+    transform: scale(0.6) !important;
+    transform-origin: center center;
+    position: absolute;
+}
+
+.emptyHand {
+    color: #95a5a6;
+    font-style: italic;
+    font-size: 14px;
+}
