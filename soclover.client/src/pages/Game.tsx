@@ -2,6 +2,7 @@
 import { RoomContext } from "../context/RoomContext";
 import { GameStatus } from "../models/dtos";
 import UsersList from "../components/UsersList";
+import GameHelp from "../components/GameHelp";
 import Board from "../components/board/Board";
 import WaitingForPlayerComponent from "../components/WaitingForPlayerComponent";
 
@@ -21,7 +22,7 @@ export default function Game() {
     return (
         <div className="container-fluid mt-4">
             <div className="row">
-                <div className="col-md-3">
+                <div className="col-12 col-sm-4 col-lg-2">
                     <div className="card shadow-sm">
                         <div className="card-body">
                             <h6 className="text-muted d-flex align-items-center m-0">
@@ -49,12 +50,15 @@ export default function Game() {
                     </div>
                 </div>
 
-                <div className="col-md-9">
+                <div className="col-12 col-sm-8 col-lg-8">
                     <div
                         className="border rounded d-flex align-items-center justify-content-center bg-light"
                         style={{ minHeight: '500px' }}>
                         {room.status === GameStatus.Lobby ? (<WaitingForPlayerComponent/>) : (<Board />)}
                     </div>
+                </div>
+                <div className="col-12 col-lg-2">
+                    <GameHelp currentGameState={room.status} />
                 </div>
             </div>
         </div>

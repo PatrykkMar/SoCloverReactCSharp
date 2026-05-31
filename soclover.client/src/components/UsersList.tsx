@@ -2,7 +2,6 @@ import { useContext} from "react";
 import { RoomContext } from "../context/RoomContext";
 import { GameStatus } from "../models/dtos";
 
-
 export default function UsersList() {
     const room = useContext(RoomContext);
 
