@@ -4,8 +4,10 @@ import { SocketContext } from "../context/SocketContext";
 import { RoomContext } from "../context/RoomContext";
 import type { CreateRoomRequest, JoinRoomRequest } from "../models/requests";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { useTranslation } from "react-i18next";
 
 export default function Home() {
+    const { t } = useTranslation(); 
     const [nick, setNick] = useState("");
     const [inputRoomCode, setInputRoomCode] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +41,6 @@ export default function Home() {
             }
 
             const data = await response.json();
-
             sessionStorage.setItem("jwt_token", data.token);
 
             if (!socket.isConnected) {
@@ -49,13 +50,13 @@ export default function Home() {
             return true;
         } catch (err) {
             console.error("Authentication or connection lifecycle failure:", err);
-            alert("Failed to initialize game secure session. Please try again.");
+            alert(t("home.errorAuth"));
             return false;
         }
     };
 
     const handleCreate = async () => {
-        if (!nick.trim()) return alert("Enter your nick!");
+        if (!nick.trim()) return alert(t("home.alertNick")); 
 
         setIsLoading(true);
         const success = await authenticateAndConnect(nick);
@@ -73,8 +74,8 @@ export default function Home() {
     };
 
     const handleJoin = async () => {
-        if (!nick.trim()) return alert("Please enter your nickname!");
-        if (!inputRoomCode.trim()) return alert("Please enter a room code!");
+        if (!nick.trim()) return alert(t("home.alertNick"));
+        if (!inputRoomCode.trim()) return alert(t("home.alertCode")); 
 
         setIsLoading(true);
         const success = await authenticateAndConnect(nick);
@@ -96,11 +97,11 @@ export default function Home() {
         <div className="container mt-5" style={{ maxWidth: '400px' }}>
             <div className="card shadow p-4">
                 <h1 className="text-center mb-4">So Clover</h1>
-                
+
                 <div className="mb-3">
                     <input
                         className="form-control"
-                        placeholder="Your nick"
+                        placeholder={t("home.nickPlaceholder")} 
                         value={nick}
                         disabled={isLoading}
                         onChange={e => setNick(e.target.value)}
@@ -110,7 +111,7 @@ export default function Home() {
                 <div className="mb-3">
                     <input
                         className="form-control"
-                        placeholder="Lobby code"
+                        placeholder={t("home.lobbyCodePlaceholder")} 
                         value={inputRoomCode}
                         disabled={isLoading}
                         onChange={e => setInputRoomCode(e.target.value)}
@@ -123,7 +124,7 @@ export default function Home() {
                         onClick={handleCreate}
                         disabled={isLoading || !nick.trim()}
                     >
-                        {isLoading ? "Processing..." : "Create new room"}
+                        {isLoading ? t("home.processing") : t("home.createRoom")}
                     </button>
 
                     <button
@@ -131,7 +132,7 @@ export default function Home() {
                         onClick={handleJoin}
                         disabled={isLoading || !nick.trim() || !inputRoomCode.trim()}
                     >
-                        {isLoading ? "Processing..." : "Join existing room"}
+                        {isLoading ? t("home.processing") : t("home.joinRoom")}
                     </button>
                 </div>
             </div>

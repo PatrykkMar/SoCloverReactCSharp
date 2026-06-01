@@ -1,2 +1,85 @@
 {
+  "home": {
+    "nickPlaceholder": "Your nick",
+    "lobbyCodePlaceholder": "Lobby code",
+    "createRoom": "Create new room",
+    "joinRoom": "Join existing room",
+    "processing": "Processing...",
+    "errorAuth": "Failed to initialize game secure session. Please try again.",
+    "alertNick": "Please enter your nickname!",
+    "alertCode": "Please enter a room code!"
+  },
+  "game": {
+    "room": "Room",
+    "startGame": "Start Game",
+    "providerNotFound": "RoomProvider not found!",
+    "copyTooltip": "Copy room code"
+  },
+  "usersList": {
+    "players": "Players",
+    "state": "State",
+    "numberOfAttempts": "Number of attempts"
+  },
+  "waitingForPlayer": {
+    "title": "Waiting for start...",
+    "description": "Someone will start the game soon."
+  },
+  "board": {
+    "loadingBoard": "Board loading...",
+    "loadingRoom": "Room loading...",
+    "alertEmptyInputs": "There are empty inputs",
+    "alertPlaceAllCards": "Place all cards on the board before checking!",
+    "confirmReturnToWriting": "Are you sure you want to return to writing? This will reset the board and all clues.",
+    "placeholderTop": "Top clue...",
+    "placeholderLeft": "Left...",
+    "placeholderRight": "Right...",
+    "placeholderBottom": "Bottom clue...",
+    "btnSubmit": "Submit clues",
+    "btnCheck": "Check",
+    "btnReturn": "Return to writing"
+  },
+  "hand": {
+    "title": "Your cards",
+    "empty": "No cards in hand"
+  },
+  "card": {
+    "emptySlot": "Empty",
+    "rotateTooltip": "Rotate card"
+  },
+  "gameHelp": {
+    "guideTitle": "Game Guide",
+    "tips": "Tips:",
+    "fallbackTitle": "Game in progress",
+    "fallbackDescription": "No specific instructions for this stage of the game.",
+    "states": {
+      "Lobby": {
+        "title": "Waiting for players ⏳",
+        "description": "You are in the lobby. Once everyone is on the list on the left, someone must click the green \"Start Game\" button to launch the game.",
+        "tips": [
+          "Copy the room code by clicking the clipboard icon 📋 next to the room name."
+        ]
+      },
+      "Writing": {
+        "title": "Writing clues phase ✍️",
+        "description": "Your board has been populated with words. Find common denominators for adjacent pairs of keywords and enter your clues on the edges.",
+        "tips": [
+          "A clue must be a single word.",
+          "You cannot use words with the same root as the main keywords.",
+          "Other players cannot see your cards right now!"
+        ]
+      },
+      "Solving": {
+        "title": "Deduction and guessing phase 🧐",
+        "description": "Before you is the board of one of the players! Work together to manipulate the keyword cards to match the clues on the edges.",
+        "tips": [
+          "The clover owner must maintain absolute silence and a poker face!",
+          "Aim to guess with the fewest number of attempts.",
+          "Cards can be rotated using the button in the center of the card. They can also be dragged onto the board using the mouse.",
+          "Dragging a card onto an occupied board slot returns the previous card from that slot back to the hand.",
+          "To verify correctness, press the \"Check\" button. If you give up as a team, you can press \"Return to writing\".",
+          "Correct slots on the board are colored green."
+        ]
+      }
+    }
+  }
 }
