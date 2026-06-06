@@ -26,8 +26,10 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
 
         if (connectionRef.current || isConnected) return;
 
+        const baseUrl = import.meta.env.VITE_API_URL;
+
         connectionRef.current = new signalR.HubConnectionBuilder()
-            .withUrl("https://localhost:7048/socloverhub", {
+            .withUrl(`${baseUrl}/socloverhub`, {
                 accessTokenFactory: () => sessionStorage.getItem("jwt_token") || ""
             })
             .withAutomaticReconnect()

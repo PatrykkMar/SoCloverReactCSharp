@@ -30,7 +30,8 @@ export default function Home() {
 
     const authenticateAndConnect = async (username: string): Promise<boolean> => {
         try {
-            const response = await fetch("https://localhost:7048/api/auth/login", {
+            const baseUrl = import.meta.env.VITE_API_URL;
+            const response = await fetch(`${baseUrl}/api/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username: username.trim() })
