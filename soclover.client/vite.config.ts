@@ -1,6 +1,5 @@
 import { fileURLToPath, URL } from 'node:url';
-
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import plugin from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
@@ -34,28 +33,39 @@ if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
     }
 }
 
-const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` :
-    env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : 'https://localhost:7048';
+export default defineConfig(({ mode }) => {
+    const currentEnv = loadEnv(mode, process.cwd(), '');
+    const prodFallback = currentEnv.VITE_API_URL || 'https://soclover.runasp.net';
 
-// https://vitejs.dev/config/
-export default defineConfig({
-    plugins: [plugin()],
-    resolve: {
-        alias: {
-            '@': fileURLToPath(new URL('./src', import.meta.url))
-        }
-    },
-    server: {
-        proxy: {
-            '^/weatherforecast': {
-                target,
-                secure: false
+    const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` :
+        env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : prodFallback;
+
+    return {
+        plugins: [plugin()],
+        resolve: {
+            alias: {
+                '@': fileURLToPath(new URL('./src', import.meta.url))
             }
         },
-        port: 54861,
-        https: {
-            key: fs.readFileSync(keyFilePath),
-            cert: fs.readFileSync(certFilePath),
+        server: {
+            proxy: {
+                '^/api': {
+                    target,
+                    secure: false,
+                    changeOrigin: true
+                },
+                '^/socloverhub': {
+                    target,
+                    secure: false,
+                    ws: true,
+                    changeOrigin: true
+                }
+            },
+            port: 54861,
+            https: {
+                key: fs.readFileSync(keyFilePath),
+                cert: fs.readFileSync(certFilePath),
+            }
         }
-    }
-})
+    };
+});

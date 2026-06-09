@@ -2,12 +2,14 @@
 import type { CardDTO } from "../../models/dtos";
 import { BoardContext } from "../../context/BoardContext";
 import styles from "./card.module.css";
+import { useTranslation } from "react-i18next";
 
 interface CardProps {
     card: CardDTO;
 }
 
 export default function Card({ card }: CardProps) {
+    const { t } = useTranslation();
     const boardContext = useContext(BoardContext);
     const rotationDegrees = (card.currentRotation ?? 0) * 90;
     const counterRotationDegrees = -rotationDegrees;
@@ -43,7 +45,7 @@ export default function Card({ card }: CardProps) {
 
                     {card.isCorrect ? (
                         <div>
-                            {/*TODO: Some icon*/ }
+                            {/*TODO: Some icon*/}
                         </div>
                     ) : (
                         boardContext?.board?.cardsActive && (
@@ -51,7 +53,7 @@ export default function Card({ card }: CardProps) {
                                 className={styles.rotateBtn}
                                 onClick={handleRotateClick}
                                 style={{ transform: `translate(-50%, -50%) rotate(${counterRotationDegrees}deg)` }}
-                                title="Rotate card"
+                                title={t("card.rotateTooltip")}
                             >
                                 ↻
                             </button>
@@ -59,7 +61,7 @@ export default function Card({ card }: CardProps) {
                     )}
                 </div>
             ) : (
-                <div className={styles.emptySlot}>Empty</div>
+                <div className={styles.emptySlot}>{t("card.emptySlot")}</div>
             )}
         </div>
     );
