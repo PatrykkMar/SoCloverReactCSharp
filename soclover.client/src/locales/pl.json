@@ -1,0 +1,85 @@
+{
+  "home": {
+    "nickPlaceholder": "Twój nick",
+    "lobbyCodePlaceholder": "Kod pokoju",
+    "createRoom": "Stwórz nowy pokój",
+    "joinRoom": "Dołącz do pokoju",
+    "processing": "Przetwarzanie...",
+    "errorAuth": "Nie udało się zainicjować bezpiecznej sesji gry. Spróbuj ponownie.",
+    "alertNick": "Wpisz swój nick!",
+    "alertCode": "Wpisz kod pokoju!"
+  },
+  "game": {
+    "room": "Pokój",
+    "startGame": "Uruchom Grę",
+    "providerNotFound": "Nie znaleziono RoomProvider!",
+    "copyTooltip": "Skopiuj kod pokoju"
+  },
+  "usersList": {
+    "players": "Gracze",
+    "state": "Status",
+    "numberOfAttempts": "Ilość prób"
+  },
+  "waitingForPlayer": {
+    "title": "Oczekiwanie na start...",
+    "description": "Ktoś wkrótce uruchomi grę."
+  },
+  "board": {
+    "loadingBoard": "Ładowanie planszy...",
+    "loadingRoom": "Ładowanie pokoju...",
+    "alertEmptyInputs": "Niektóre pola podpowiedzi są puste!",
+    "alertPlaceAllCards": "Umieść wszystkie karty na planszy przed sprawdzeniem!",
+    "confirmReturnToWriting": "Czy na pewno chcesz wrócić do fazy pisania? To zresetuje całą planszę oraz obecne podpowiedzi.",
+    "placeholderTop": "Podpowiedź góra...",
+    "placeholderLeft": "Lewa...",
+    "placeholderRight": "Prawa...",
+    "placeholderBottom": "Podpowiedź dół...",
+    "btnSubmit": "Zatwierdź podpowiedzi",
+    "btnCheck": "Sprawdź",
+    "btnReturn": "Wróć do pisania"
+  },
+  "card": {
+    "emptySlot": "Puste",
+    "rotateTooltip": "Obróć kartę"
+  },
+  "hand": {
+    "title": "Twoje karty",
+    "empty": "Brak kart w ręce"
+  },
+  "gameHelp": {
+    "guideTitle": "Instrukcja Gry",
+    "tips": "Wskazówki:",
+    "fallbackTitle": "Trwa rozgrywka",
+    "fallbackDescription": "Brak szczegółowych instrukcji dla tej części gry.",
+    "states": {
+      "Lobby": {
+        "title": "Oczekiwanie na graczy ⏳",
+        "description": "Siedzicie w poczekalni pokoju. Gdy wszyscy znajdą się na liście po lewej stronie, ktoś musi kliknąć zielony przycisk \"Start Game\", aby uruchomić rozgrywkę.",
+        "tips": [
+          "Skopiuj kod pokoju klikając ikonę schowka 📋 obok nazwy pokoju."
+        ]
+      },
+      "Writing": {
+        "title": "Faza pisania podpowiedzi ✍️",
+        "description": "Twoja plansza została uzupełniona słowami. Znajdź wspólne mianowniki dla sąsiadujących par haseł i wpisz swoje podpowiedzi na krawędziach.",
+        "tips": [
+          "Podpowiedź musi być pojedynczym słowem.",
+          "Nie możesz używać słów o tym samym rdzeniu co hasła główne.",
+          "Inni gracze nie widzą teraz Twoich kart!"
+        ]
+      },
+      "Solving": {
+        "title": "Faza dedukcji i zgadywania 🧐",
+        "description": "Przed Wami plansza jednego z graczy! Wspólnie manipulujcie kartami haseł, aby dopasować je do podpowiedzi na krawędziach.",
+        "tips": [
+          "Właściciel koniczynki musi zachować absolutne milczenie i kamienną twarz!",
+          "Dążycie do zgadnięcia przy najmniejszej liczbie prób.",
+          "Karty można obracać przyciskiem na środku karty. Można je też przeciągać myszką na planszę.",
+          "Przeciągnięcie karty na zajęty slot planszy zwraca poprzednią kartę na slocie do ręki.",
+          "Aby sprawdzić poprawność, należy wcisnąć przycisk \"Check\". Jeżeli jako drużyna się poddajecie, możecie wcisnąć \"Return to writing\"",
+          "Poprawne sloty planszy pokolorywane są zielonym kolorem"
+        ]
+      }
+    }
+  }
+}

@@ -6,8 +6,10 @@ import { useContext, useState, useEffect } from "react";
 import { RoomContext } from "../../context/RoomContext";
 import { GameStatus } from "../../models/dtos";
 import Hand from "./Hand";
+import { useTranslation } from "react-i18next";
 
 export default function Board() {
+    const { t } = useTranslation();
     const boardContext = useContext(BoardContext);
     const roomContext = useContext(RoomContext);
 
@@ -27,10 +29,10 @@ export default function Board() {
 
             const setCluesAsync = async () => {
                 setClues({
-	                top: boardContext?.board?.topClue || (isWritingPhase && savedClues?.top) || "",
-	                right: boardContext?.board?.rightClue || (isWritingPhase && savedClues?.right) || "",
-	                bottom: boardContext?.board?.bottomClue || (isWritingPhase && savedClues?.bottom) || "",
-	                left: boardContext?.board?.leftClue || (isWritingPhase && savedClues?.left) || ""
+                    top: boardContext?.board?.topClue || (isWritingPhase && savedClues?.top) || "",
+                    right: boardContext?.board?.rightClue || (isWritingPhase && savedClues?.right) || "",
+                    bottom: boardContext?.board?.bottomClue || (isWritingPhase && savedClues?.bottom) || "",
+                    left: boardContext?.board?.leftClue || (isWritingPhase && savedClues?.left) || ""
                 })
             };
             setCluesAsync();
@@ -38,10 +40,10 @@ export default function Board() {
     }, [boardContext?.board, roomContext?.status]);
 
     if (!boardContext || !boardContext.board)
-        return <div>Board loading...</div>;
+        return <div>{t("board.loadingBoard")}</div>;
 
     if (!roomContext)
-        return <div>Room loading...</div>;
+        return <div>{t("board.loadingRoom")}</div>;
 
     const { board, submitClues, check, returnToWriting } = boardContext;
 
@@ -62,7 +64,7 @@ export default function Board() {
         const words = [clues.top, clues.right, clues.bottom, clues.left];
 
         if (words.some(x => x.trim() === "")) {
-            alert("There are empty inputs");
+            alert(t("board.alertEmptyInputs"));
             return;
         }
 
@@ -75,7 +77,7 @@ export default function Board() {
         const cardsOnBoard = board.cards.filter(card => card.location === "OnBoard");
 
         if (cardsOnBoard.length < 4) {
-            alert("Place all cards on the board before checking!");
+            alert(t("board.alertPlaceAllCards"));
             return;
         }
         check();
@@ -91,7 +93,7 @@ export default function Board() {
             return;
         }
 
-        if (window.confirm("Are you sure you want to return to writing? This will reset the board and all clues.")) {
+        if (window.confirm(t("board.confirmReturnToWriting"))) {
             returnToWriting();
         }
     };
@@ -104,7 +106,7 @@ export default function Board() {
                     onChange={(e) => handleInputChange("top", e.target.value)}
                     className={`${styles.clueInput} ${styles.top}`}
                     readOnly={!board.inputsActive}
-                    placeholder="Top clue..."
+                    placeholder={t("board.placeholderTop")}
                 />
             </div>
 
@@ -114,7 +116,7 @@ export default function Board() {
                     onChange={(e) => handleInputChange("left", e.target.value)}
                     className={`${styles.clueInput} ${styles.left}`}
                     readOnly={!board.inputsActive}
-                    placeholder="Left..."
+                    placeholder={t("board.placeholderLeft")}
                 />
 
                 <div className={styles.grid}>
@@ -138,7 +140,7 @@ export default function Board() {
                     onChange={(e) => handleInputChange("right", e.target.value)}
                     className={`${styles.clueInput} ${styles.right}`}
                     readOnly={!board.inputsActive}
-                    placeholder="Right..."
+                    placeholder={t("board.placeholderRight")}
                 />
             </div>
 
@@ -148,13 +150,13 @@ export default function Board() {
                     onChange={(e) => handleInputChange("bottom", e.target.value)}
                     className={`${styles.clueInput} ${styles.bottom}`}
                     readOnly={!board.inputsActive}
-                    placeholder="Bottom clue..."
+                    placeholder={t("board.placeholderBottom")}
                 />
             </div>
 
             {roomContext?.status === GameStatus.Writing && (
                 <button className="btn btn-primary mt-3" onClick={handleSubmitClues}>
-                    Submit clues
+                    {t("board.btnSubmit")}
                 </button>
             )}
             {roomContext.status === GameStatus.Solving && (
@@ -163,12 +165,12 @@ export default function Board() {
                     {!boardContext.board.isChecked &&
                         !boardContext.board.cards.filter(card => card.location === "OnBoard").every(card => card.isCorrect) && (
                             <button className="btn btn-primary mt-3" onClick={handleCheck}>
-                                Check
+                                {t("board.btnCheck")}
                             </button>
-                    )}
+                        )}
 
                     <button className="btn btn-primary mt-3" onClick={handleReturnToWriting}>
-                        Return to writing
+                        {t("board.btnReturn")}
                     </button>
                 </>
             )}
