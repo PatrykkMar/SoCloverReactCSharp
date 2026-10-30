@@ -1,7 +1,7 @@
 import { BoardContext } from "../../context/BoardContext";
 import type { SubmitCluesRequest } from "../../models/requests";
 import BoardSlot from "./BoardSlot";
-import styles from "./Board.module.css";
+import styles from "./board.module.css";
 import { useContext, useState, useEffect } from "react";
 import { RoomContext } from "../../context/RoomContext";
 import { GameStatus } from "../../models/dtos";

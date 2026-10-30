@@ -1,6 +1,6 @@
 import type { CardDTO } from "../../models/dtos";
 import Card from "./Card";
-import styles from "./Hand.module.css";
+import styles from "./hand.module.css";
 
 interface HandProps {
     cards: CardDTO[];

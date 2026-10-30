@@ -6,39 +6,52 @@ import path from 'path';
 import child_process from 'child_process';
 import { env } from 'process';
 
-const baseFolder =
-    env.APPDATA !== undefined && env.APPDATA !== ''
-        ? `${env.APPDATA}/ASP.NET/https`
-        : `${env.HOME}/.aspnet/https`;
-
-const certificateName = "soclover.client";
-const certFilePath = path.join(baseFolder, `${certificateName}.pem`);
-const keyFilePath = path.join(baseFolder, `${certificateName}.key`);
-
-if (!fs.existsSync(baseFolder)) {
-    fs.mkdirSync(baseFolder, { recursive: true });
-}
-
-if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
-    if (0 !== child_process.spawnSync('dotnet', [
-        'dev-certs',
-        'https',
-        '--export-path',
-        certFilePath,
-        '--format',
-        'Pem',
-        '--no-password',
-    ], { stdio: 'inherit', }).status) {
-        throw new Error("Could not create certificate.");
-    }
-}
-
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode }) => {
     const currentEnv = loadEnv(mode, process.cwd(), '');
     const prodFallback = currentEnv.VITE_API_URL || 'https://soclover.runasp.net';
 
     const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` :
         env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : prodFallback;
+
+    let httpsConfig = undefined;
+
+    if (command === 'serve') {
+        const baseFolder =
+            env.APPDATA !== undefined && env.APPDATA !== ''
+                ? `${env.APPDATA}/ASP.NET/https`
+                : `${env.HOME}/.aspnet/https`;
+
+        const certificateName = "soclover.client";
+        const certFilePath = path.join(baseFolder, `${certificateName}.pem`);
+        const keyFilePath = path.join(baseFolder, `${certificateName}.key`);
+
+        if (!fs.existsSync(baseFolder)) {
+            fs.mkdirSync(baseFolder, { recursive: true });
+        }
+
+        if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
+            const result = child_process.spawnSync('dotnet', [
+                'dev-certs',
+                'https',
+                '--export-path',
+                certFilePath,
+                '--format',
+                'Pem',
+                '--no-password',
+            ], { stdio: 'inherit' });
+
+            if (result.status !== 0) {
+                console.warn("Could not create certificate automatically, but continuing...");
+            }
+        }
+
+        if (fs.existsSync(certFilePath) && fs.existsSync(keyFilePath)) {
+            httpsConfig = {
+                key: fs.readFileSync(keyFilePath),
+                cert: fs.readFileSync(certFilePath),
+            };
+        }
+    }
 
     return {
         plugins: [plugin()],
@@ -62,10 +75,7 @@ export default defineConfig(({ mode }) => {
                 }
             },
             port: 54861,
-            https: {
-                key: fs.readFileSync(keyFilePath),
-                cert: fs.readFileSync(certFilePath),
-            }
+            https: httpsConfig
         }
     };
 });
